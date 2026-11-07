@@ -2,6 +2,7 @@ import { History } from "./History";
 import { ServiceSettings } from "./ServiceSettings";
 import { ThinkingLibrary } from "./ThinkingLibrary";
 import { SavedPractice } from "./SavedPractice";
+import { Interview } from "./Interview";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ArrowRight,
@@ -771,6 +772,7 @@ export default function App() {
         <BottomNav active="/" />
       </>
     );
+  else if (path === "/interview") page = <Interview />;
   else if (path === "/logic" || path === "/structures")
     page = (
       <Logic
@@ -827,6 +829,7 @@ export default function App() {
           mode={path.split("/")[2] as Mode}
           search={search}
           retrySession={sessions.find((s) => s.id === search.get("retry"))}
+          followupSession={sessions.find((s) => s.id === search.get("followup"))}
           status={status}
           onSaved={refresh}
         />

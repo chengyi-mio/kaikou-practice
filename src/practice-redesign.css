@@ -1,4 +1,57 @@
 /* Practice surfaces follow the approved warm-white / forest-green design. */
+.real-task-home, .app-shell .real-task-panel { border: 1px solid #d6e2d2; background: #f2f6ed; border-radius: 18px; padding: 24px; }
+.real-task-home { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-bottom: 24px; }
+.real-task-home span, .real-task-heading .eyebrow { color: #53765c; font-size: 12px; letter-spacing: .08em; }
+.real-task-home h2, .real-task-heading h2 { margin: 8px 0; color: #203b33; font-size: 23px; }
+.real-task-home p, .real-task-panel p { margin: 6px 0 0; color: #607267; line-height: 1.65; }
+.real-task-panel { margin-bottom: 24px; }
+.real-task-heading { display: flex; align-items: end; justify-content: space-between; gap: 16px; }
+.real-task-heading small { max-width: 340px; color: #708178; line-height: 1.5; }
+.real-task-kinds { display: flex; flex-wrap: wrap; gap: 8px; margin: 20px 0; }
+.real-task-kinds button { border: 1px solid #cad8c7; background: white; color: #315044; border-radius: 100px; padding: 9px 16px; cursor: pointer; }
+.real-task-kinds button.selected { background: #315f4f; border-color: #315f4f; color: white; }
+.real-task-fields { display: grid; grid-template-columns: 1fr 2fr; gap: 14px; }
+.real-task-fields label { display: flex; flex-direction: column; gap: 7px; color: #355346; font-weight: 650; }
+.real-task-fields label:nth-child(n+3) { grid-column: 1 / -1; }
+.real-task-fields input, .real-task-fields textarea { width: 100%; box-sizing: border-box; border: 1px solid #c9d8c9; background: #fff; border-radius: 10px; padding: 11px 13px; color: #203b33; font: inherit; resize: vertical; }
+.real-task-fields input:focus, .real-task-fields textarea:focus { outline: 2px solid #87ae89; outline-offset: 1px; }
+.real-task-review { border: 1px solid #d6e2d2; border-radius: 12px; padding: 15px; margin: 14px 0; background: #f7faf5; }
+.real-task-review p { margin: 6px 0; overflow-wrap: anywhere; }
+.followup-card { margin-top: 18px; padding-top: 18px; border-top: 1px solid #d8e3d8; }
+.followup-card h4 { margin: 0 0 6px; color: #203b33; }
+.followup-card p { line-height: 1.55; }
+.followup-card blockquote { margin: 12px 0; padding: 12px 15px; background: #eef4ec; color: #203b33; border-left: 3px solid #5b805d; border-radius: 6px; font-size: 17px; line-height: 1.7; white-space: pre-wrap; overflow-wrap: anywhere; }
+.audio-observations, .skill-progress { border: 1px solid #dce7dc; border-radius: 14px; background: #f8faf6; padding: 18px 20px; margin: 16px 0 22px; }
+.audio-observations h3, .skill-progress h2 { margin: 0 0 10px; color: #203b33; }
+.evidence-seek { display: block; margin-top: 8px; font-size: 12px; }
+.audio-observations > div { display: flex; flex-wrap: wrap; gap: 12px; }
+.audio-observations > div span { padding: 9px 12px; border-radius: 9px; background: white; }
+.audio-observations strong { font-size: 20px; color: #315f4f; }
+.audio-observations small, .skill-progress small, .skill-progress p { color: #65776a; line-height: 1.6; }
+.skill-progress-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(215px, 1fr)); gap: 12px; margin-top: 16px; }
+.skill-progress-grid article { background: white; border: 1px solid #e1e9df; border-radius: 12px; padding: 15px; }
+.skill-progress-grid article strong, .skill-progress-grid article small { display: block; }
+.skill-progress-grid article p { font-size: 17px; color: #315f4f; margin: 10px 0; }
+.skill-progress-grid blockquote { margin: 10px 0 0; font-size: 13px; color: #536b5d; overflow-wrap: anywhere; }
+.skill-progress-controls { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin: 18px 0 10px; }
+.skill-progress-controls label { display: flex; align-items: center; gap: 8px; color: #315044; }
+.skill-progress-controls select { max-width: min(480px, 65vw); border: 1px solid #c9d8c9; border-radius: 8px; padding: 9px; background: white; color: #203b33; }
+.skill-progress-controls [role="group"] { display: flex; gap: 5px; }
+.skill-progress-controls button { border: 1px solid #d6e2d2; border-radius: 8px; background: white; color: #315044; padding: 7px 10px; cursor: pointer; }
+.skill-progress-controls button.selected { background: #315f4f; color: white; }
+.skill-progress-timeline { display: flex; gap: 8px; overflow-x: auto; padding: 12px 0; }
+.skill-progress-timeline article { flex: 1 0 100px; min-width: 100px; background: white; border: 1px solid #e1e9df; border-top: 4px solid #b8c6ba; border-radius: 9px; padding: 10px; }
+.skill-progress-timeline article.status-good { border-top-color: #6b9a65; }
+.skill-progress-timeline article.status-partial { border-top-color: #d6aa5d; }
+.skill-progress-timeline article.status-missing { border-top-color: #c77868; }
+.skill-progress-timeline time, .skill-progress-timeline strong, .skill-progress-timeline span { display: block; }
+.skill-progress-timeline time, .skill-progress-timeline span { color: #708178; font-size: 12px; }
+.skill-progress-timeline strong { margin: 7px 0; color: #203b33; }
+.skill-progress-evidence { margin-top: 12px; }
+.skill-progress-evidence > div { border-top: 1px solid #e1e9df; padding: 11px 0; }
+.skill-progress-evidence p { margin: 4px 0 0; }
+@media (max-width: 700px) { .skill-progress-controls label { flex-direction: column; align-items: flex-start; } .skill-progress-controls select { max-width: 84vw; } }
+@media (max-width: 700px) { .real-task-home, .real-task-heading { align-items: stretch; flex-direction: column; } .real-task-fields { grid-template-columns: 1fr; } }
 .app-shell .practice-redesign,
 .app-shell .saved-practice-redesign,
 .app-shell .feedback-redesign {
@@ -475,10 +528,12 @@
 }
 .app-shell .practice-redesign .word-card {
   display: flex;
-  gap: 12px;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 14px;
   flex-wrap: wrap;
   flex-direction: row;
-  min-height: 140px;
+  min-height: 160px;
   margin: 0;
   padding: 22px 0;
   border: 0;
@@ -486,12 +541,24 @@
   box-shadow: none;
 }
 .app-shell .practice-redesign .word-card > span {
+  box-sizing: border-box;
+  flex: 0 0 min(116px, calc((100% - 28px) / 3));
+  min-width: 0;
+  height: 90px;
+  display: grid;
+  place-items: center;
+  text-align: center;
   color: #2f5d50;
   background: #edf2eb;
   border: 0;
   border-radius: 12px;
-  padding: 16px 20px;
+  padding: 10px;
   font-size: 25px;
+}
+.app-shell .practice-redesign .word-card > span + span {
+  min-width: 0;
+  border: 0;
+  padding: 10px;
 }
 .app-shell .practice-redesign .word-selects label {
   color: #728277;
@@ -962,6 +1029,19 @@
   color: #f4e0bc;
   margin-bottom: 0;
 }
+.app-shell .feedback-redesign .practice-next .followup-card h4 {
+  color: #fff;
+}
+.app-shell .feedback-redesign .practice-next .followup-card .text-button {
+  color: #e1f2e8;
+}
+.app-shell .feedback-redesign .practice-next .followup-card .text-button:hover {
+  color: #fff;
+  text-decoration: underline;
+}
+.app-shell .feedback-redesign .practice-next .followup-card p[role="alert"] {
+  color: #ffe2a8;
+}
 .app-shell .feedback-redesign .feedback-model-footer {
   display: flex;
   flex-wrap: wrap;
@@ -1371,7 +1451,11 @@
   }
   .app-shell .practice-redesign .word-card > span {
     font-size: 21px;
-    padding: 12px;
+    height: 76px;
+    padding: 8px;
+  }
+  .app-shell .practice-redesign .word-card > span + span {
+    padding: 8px;
   }
   .app-shell .feedback-redesign .feedback-tabs {
     gap: 19px;

@@ -99,7 +99,7 @@ export function ServiceSettings({ refresh }: { refresh: () => Promise<void> }) {
   return (
     <section className="settings-section service-config">
       <h2>AI 服务配置</h2>
-      <p>选择模型服务，粘贴你的 API Key。保存后立即生效。</p>
+      <p>首次接入时填写 API Key 并保存。之后会自动使用已保存的密钥，无需每次输入。</p>
       <fieldset disabled={loading || Boolean(busy)}>
         <label htmlFor="ai-provider">模型服务</label>
         <select
@@ -162,21 +162,28 @@ export function ServiceSettings({ refresh }: { refresh: () => Promise<void> }) {
             spellCheck={false}
             placeholder={
               reusable
-                ? "已保存密钥；留空继续使用，粘贴新密钥可替换"
-                : "在这里粘贴你的 API Key"
+                ? "已保存密钥，留空即可继续使用"
+                : "首次使用或更换接口时粘贴 API Key"
             }
           />
-          <button
-            type="button"
-            aria-pressed={show}
-            onClick={() => setShow(!show)}
-          >
-            {show ? "隐藏密钥" : "显示密钥"}
-          </button>
+          {apiKey && <button
+              type="button"
+              aria-pressed={show}
+              onClick={() => setShow(!show)}
+            >
+              {show ? "隐藏新密钥" : "显示新密钥"}
+            </button>}
         </div>
+        <p className="service-key-state" aria-live="polite">
+          {reusable
+            ? "已为当前接口保存密钥。保持输入框为空，也可以测试连接或保存模型设置。"
+            : saved?.hasKey
+              ? "当前选择的是另一个接口地址；该地址需要填写自己的 API Key。原接口的密钥不会显示在此输入框中。"
+              : "当前尚未保存密钥，首次接入请填写并点击“保存并生效”。"}
+        </p>
         <small>
           密钥经 Windows
-          本机加密保存，不会回填显示。测试会向所填地址发送一次简短请求，可能消耗少量额度，不会发送练习记录。
+          本机加密保存，重启后自动使用；为了安全，不会回填显示原文。测试会向所填地址发送一次简短请求，可能消耗少量额度，不会发送练习记录。
         </small>
         <div className="service-actions">
           <button className="button secondary" onClick={() => void act("test")}>

@@ -123,9 +123,14 @@ export function coachingStandard(input) {
       "结论是否符合题目与框架；需要验证时给出可执行的核对动作，感谢或解释类任务不强求额外行动",
     ];
   }
+  if (input.realTask) {
+    base[0] = ["focus", "目标与重点", `是否围绕用户确认的目标“${input.realTask.goal}”表达；不能因方案尚未完整而否定切题`];
+    base[3] = ["audience", "听众与沟通目的", `听众是“${input.realTask.audience || "未指定"}”。检查表达是否考虑对方理解和需要采取的行动；必要背景仅作参考，不能当作已经说出口的内容`];
+    base[5] = ["completion", "任务完成与下一步", `本次用户确认的检查重点：${input.realTask.criteria || "是否给出明确下一步"}。逐项检查转写是否体现；不要要求用户编造背景中没有的事实`];
+  }
   return {
     profile,
-    name: thinking ? `${thinking.name}应用练习` : profiles[profile].name,
+    name: input.realTask ? `真实任务 · ${profiles[profile].name}` : thinking ? `${thinking.name}应用练习` : profiles[profile].name,
     dimensions: base.map(([id, title, standard]) => ({ id, title, standard })),
     template: thinking
       ? thinking.checks.map((x) => `${x}：[填写你的判断]`).join("\n")
@@ -151,6 +156,7 @@ export function buildAgnesMessages(input) {
         evidenceSegments: segmentsFor(input.transcript),
         rubric: standard.dimensions,
         scene: standard.name,
+        realTask: input.realTask,
       }),
     },
   ];
@@ -158,7 +164,7 @@ export function buildAgnesMessages(input) {
 const dimension = z.object({
   id: z.string(),
   status: z.enum(["good", "partial", "missing", "unsure"]),
-  evidence: z.array(z.string().min(1).max(1000)).max(2),
+  evidence: z.array(z.string().min(1).max(1000)).max(6),
   analysis: z.string().min(1).max(600),
   // Some valid responses omit per-dimension advice while retaining priorities.
   // Keep it absent rather than rejecting evidence-backed analysis or inventing advice.

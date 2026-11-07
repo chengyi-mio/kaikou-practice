@@ -1,4 +1,4 @@
-import type { Feedback, ServiceStatus, Session } from "./types";
+import type { Feedback, ServiceStatus, Session, TranscriptSegment, TranscriptWord } from "./types";
 async function jsonResponse(response: Response) {
   const data = await response
     .json()
@@ -39,6 +39,7 @@ export async function analyze(
           material: session.material,
           ruleProfile: session.ruleProfile,
           thinkingModelId: session.thinkingModelId,
+          realTask: session.realTask,
         }),
         signal: AbortSignal.timeout(100000),
       }),
@@ -58,7 +59,21 @@ export async function analyze(
     throw error;
   }
 }
-export async function transcribe(blob: Blob): Promise<string> {
+export async function generateFollowup(session: Session): Promise<string> {
+  const data = await jsonResponse(await fetch("/api/followup", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      topic: session.topic,
+      transcript: session.transcript,
+      realTask: session.realTask,
+      history: session.dialogue,
+    }),
+    signal: AbortSignal.timeout(45000),
+  }));
+  return data.question;
+}
+export async function transcribeDetailed(blob: Blob): Promise<{ text: string; segments?: TranscriptSegment[]; words?: TranscriptWord[] }> {
   const body = new FormData();
   body.append(
     "audio",
@@ -72,5 +87,8 @@ export async function transcribe(blob: Blob): Promise<string> {
       signal: AbortSignal.timeout(310000),
     }),
   );
-  return data.text;
+  return { text: data.text, segments: Array.isArray(data.segments) ? data.segments : undefined, words: Array.isArray(data.words) ? data.words : undefined };
+}
+export async function transcribe(blob: Blob): Promise<string> {
+  return (await transcribeDetailed(blob)).text;
 }

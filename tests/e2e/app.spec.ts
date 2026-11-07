@@ -85,6 +85,7 @@ test("real MediaRecorder pipeline records fake-device audio, stores and plays it
     });
   expect(playable).toBe(true);
   await page.getByRole("button", { name: "仅保存练习" }).click();
+  await expect(page.locator(".history-card")).toBeVisible();
   await page.reload();
   await page.locator(".history-card").click();
   await expect(page.locator("audio")).toBeVisible();

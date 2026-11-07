@@ -146,18 +146,27 @@ export function Empty({
     </div>
   );
 }
-export function AudioPlayer({ blob }: { blob?: Blob }) {
+export function AudioPlayer({ blob, seekTo }: { blob?: Blob; seekTo?: { time: number; nonce: number } }) {
   const [url, setUrl] = useState("");
+  const audioRef = useRef<HTMLAudioElement>(null);
   useEffect(() => {
     if (!blob) return;
     const value = URL.createObjectURL(blob);
     setUrl(value);
     return () => URL.revokeObjectURL(value);
   }, [blob]);
+  useEffect(() => {
+    if (!seekTo || !audioRef.current) return;
+    const audio = audioRef.current;
+    const jump = () => { audio.currentTime = seekTo.time; void audio.play().catch(() => {}); };
+    if (audio.readyState >= 1) jump();
+    else audio.addEventListener("loadedmetadata", jump, { once: true });
+    return () => audio.removeEventListener("loadedmetadata", jump);
+  }, [seekTo, url]);
   if (!blob || !url) return null;
   return (
     <div className="audio-player">
-      <audio controls src={url} preload="metadata" aria-label="练习录音" />
+      <audio ref={audioRef} controls src={url} preload="metadata" aria-label="练习录音" />
       <a
         className="icon-button"
         href={url}

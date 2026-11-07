@@ -6,11 +6,13 @@ const {
   ipcMain,
   safeStorage,
   dialog,
+  shell,
 } = require("electron");
 const path = require("node:path");
 const fs = require("node:fs");
 const { pathToFileURL } = require("node:url");
 const { createServiceSettings } = require("./service-settings.cjs");
+const { createRealtimeSettings } = require("./realtime-settings.cjs");
 const { createLocalTranscription } = require("./local-transcription.cjs");
 
 app.setName("开口练习");
@@ -71,6 +73,15 @@ async function start() {
     },
     decrypt: (value) => safeStorage.decryptString(value),
   });
+  const realtime = createRealtimeSettings({
+    env: settings,
+    file: path.join(app.getPath("userData"), "live-service.json"),
+    encrypt: (value) => {
+      if (!safeStorage.isEncryptionAvailable()) throw new Error("系统密钥保护暂不可用，未保存实时语音密钥。");
+      return safeStorage.encryptString(value);
+    },
+    decrypt: (value) => safeStorage.decryptString(value),
+  });
   const { createApp } = await import(
     pathToFileURL(path.join(root, "server", "app.mjs")).href
   );
@@ -86,6 +97,7 @@ async function start() {
     env: settings,
     localTranscription,
     refreshConfig: () => services.reload(),
+    refreshRealtimeConfig: () => realtime.reload(),
   });
   backend.use((_req, res, next) => {
     res.setHeader(
@@ -147,9 +159,17 @@ async function start() {
       webSecurity: true,
       partition: "persist:kaikou",
       spellcheck: false,
+      backgroundThrottling: false,
     },
   });
-  mainWindow.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    try {
+      const target = new URL(url);
+      if (target.protocol === "https:" && ["bailian.console.aliyun.com", "help.aliyun.com"].includes(target.hostname))
+        void shell.openExternal(target.href);
+    } catch { /* Unknown targets stay blocked. */ }
+    return { action: "deny" };
+  });
   mainWindow.webContents.on("will-navigate", (event, url) => {
     if (!isLocal(url)) event.preventDefault();
   });
@@ -216,6 +236,13 @@ async function start() {
     app.relaunch();
     app.quit();
   });
+  for (const action of ["read", "save"]) {
+    ipcMain.handle(`kaikou:live-${action}`, async (event, input) => {
+      verifySender(event);
+      try { return { success: true, value: realtime[action](input) }; }
+      catch { return { success: false, message: "实时配置读取或保存失败。请检查填写内容、地域、业务空间与本机存储；原有点评密钥不变。" }; }
+    });
+  }
   await mainWindow.loadURL(origin);
 }
 app.on("window-all-closed", () => {

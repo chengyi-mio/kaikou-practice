@@ -1,6 +1,16 @@
 export type RuleProfile =
   "auto" | "general" | "report" | "interview" | "persuade" | "retell";
 export type Mode = "improv" | "logic" | "retell";
+export type RealTask = {
+  kind: "report" | "delay" | "request" | "interview";
+  audience: string;
+  goal: string;
+  context: string;
+  criteria: string;
+};
+export type TranscriptSegment = { start: number; end: number; text: string; startChar: number; endChar: number };
+export type TranscriptWord = TranscriptSegment;
+export type DialogueTurn = { question: string; answer: string };
 export type Feedback = {
   source: "ai" | "basic";
   provider?: "jev" | "agnes";
@@ -42,6 +52,12 @@ export type Feedback = {
   metrics: { characters: number; duration: number; fillers: number };
 };
 export type Session = {
+  followupOf?: string;
+  dialogueTurn?: number;
+  dialogue?: DialogueTurn[];
+  transcriptSegments?: TranscriptSegment[];
+  transcriptWords?: TranscriptWord[];
+  realTask?: RealTask;
   retryOf?: string;
   practiceFocus?: string;
   thinkingModelId?: string;

@@ -3,7 +3,7 @@ import { FeedbackReview, AnalysisProgress } from "./PracticeLoop";
 import "./practice-redesign.css";
 import { RuleSelector } from "./RuleSelector";
 import type { RuleProfile } from "./types";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   ArrowRight,
   ArrowClockwise,
@@ -16,7 +16,7 @@ import {
   TextAlignLeft,
   Waveform,
 } from "@phosphor-icons/react";
-import { analyze, transcribe } from "./api";
+import { analyze, transcribeDetailed } from "./api";
 import {
   AudioPlayer,
   ErrorNote,
@@ -36,10 +36,13 @@ import {
 } from "./data";
 import { saveSession } from "./storage";
 import { scenarios } from "./scenarios";
-import type { Feedback, Mode, ServiceStatus, Session } from "./types";
+import type { Feedback, Mode, ServiceStatus, Session, TranscriptSegment, TranscriptWord } from "./types";
 import { speechSupported, useRecorder } from "./useRecorder";
 import { thinkingModels } from "./thinkingData";
 import { thinkingPractice } from "./thinkingPractice";
+import { realTaskQuestion, realTaskTemplates } from "./realTask";
+import { speakQuestion } from "./voicePrompt";
+import type { RealTask } from "./types";
 const clockText = (n: number) =>
   `${String(Math.floor(n / 60)).padStart(2, "0")}:${String(n % 60).padStart(2, "0")}`;
 
@@ -49,8 +52,10 @@ export function Practice({
   status,
   onSaved,
   retrySession,
+  followupSession,
 }: {
   retrySession?: Session;
+  followupSession?: Session;
   mode: Mode;
   search: URLSearchParams;
   status: ServiceStatus;
@@ -63,6 +68,14 @@ export function Practice({
     mode === "logic"
       ? scenarios.find((s) => s.id === search.get("scene"))
       : undefined;
+  const realTaskMode = mode === "logic" && (search.get("real") === "1" || Boolean(retrySession?.realTask || followupSession?.realTask));
+  const [realTask, setRealTask] = useState<RealTask>(() => retrySession?.realTask || followupSession?.realTask || {
+    kind: "report",
+    audience: "主管",
+    goal: realTaskTemplates.report.goal,
+    context: "",
+    criteria: realTaskTemplates.report.criteria,
+  });
   const practiceTopics = scene?.prompts || topics;
   const thinking =
     mode === "logic"
@@ -74,8 +87,8 @@ export function Practice({
   const baseFramework =
     frameworks.find(
       (f) =>
-        retrySession?.framework?.startsWith(f.name) ||
-        f.id === search.get("framework"),
+        (retrySession?.framework || followupSession?.framework)?.startsWith(f.name) ||
+        f.id === search.get("framework") || (realTaskMode && f.id === realTaskTemplates[realTask.kind].framework),
     ) || frameworks[1];
   const framework = thinking
     ? {
@@ -98,7 +111,7 @@ export function Practice({
     "setup",
   );
   const [topic, setTopic] = useState(
-    retrySession?.topic ||
+    retrySession?.topic || search.get("question") ||
       (thinking
         ? thinkingPractice[thinking.id].task
         : lesson?.task || (scene ? scene.prompts[0] : pick(topics))),
@@ -117,9 +130,11 @@ export function Practice({
     !status.asr && speechSupported(),
   );
   const [ruleProfile, setRuleProfile] = useState<RuleProfile>(
-    retrySession?.ruleProfile || "auto",
+    retrySession?.ruleProfile || followupSession?.ruleProfile || (realTaskMode ? realTaskTemplates[realTask.kind].profile : "auto"),
   );
   const [text, setText] = useState("");
+  const [transcriptSegments, setTranscriptSegments] = useState<TranscriptSegment[]>();
+  const [transcriptWords, setTranscriptWords] = useState<TranscriptWord[]>();
   const [error, setError] = useState("");
   const [working, setWorking] = useState("");
   const [aiCheckRequest, setAiCheckRequest] = useState(0);
@@ -135,9 +150,12 @@ export function Practice({
   const recorder = useRecorder(targetDuration);
   const autoTranscribed = useRef(false);
   const active = useRef(true);
+  const operationPending = useRef(false);
   const question =
-    retrySession?.topic ||
-    (mode === "retell"
+    retrySession?.topic || search.get("question") ||
+    (realTaskMode
+      ? realTaskQuestion(realTask)
+      : mode === "retell"
       ? material.title
       : mode === "improv" && kind === "words"
         ? `用“${words.join("、")}”讲一个故事或观点`
@@ -169,7 +187,7 @@ export function Practice({
       window.removeEventListener("beforeunload", beforeUnload);
     };
   }, [view, text, draft, recorder.blob, saved, working]);
-  useEffect(() => {
+  useLayoutEffect(() => {
     active.current = true;
     return () => {
       active.current = false;
@@ -216,6 +234,11 @@ export function Practice({
   }
   async function start() {
     setError("");
+    if (realTaskMode && !realTask.goal.trim()) {
+      setError("先写下这次沟通想达成什么，再开始练习。");
+      document.getElementById("real-task-goal")?.focus();
+      return;
+    }
     if (await recorder.prepare()) {
       setView("session");
       setCountdown(prepTime);
@@ -227,6 +250,8 @@ export function Practice({
     setCountdown(null);
     setFeedback(undefined);
     setText("");
+    setTranscriptSegments(undefined);
+    setTranscriptWords(undefined);
     setError("");
     setSaved(false);
     setTranscriptionState("idle");
@@ -250,7 +275,14 @@ export function Practice({
   }
   function session(report?: Feedback): Session {
     return {
+      realTask: realTaskMode ? realTask : undefined,
       id: sessionId,
+      followupOf: followupSession?.id,
+      dialogueTurn: followupSession ? (followupSession.dialogueTurn || 1) + 1 : 1,
+      dialogue: followupSession ? [
+        ...(followupSession.dialogue || []),
+        { question: followupSession.topic, answer: followupSession.transcript },
+      ].slice(-6) : undefined,
       retryOf: retrySession?.id,
       practiceFocus,
       previousAttempt:
@@ -268,10 +300,12 @@ export function Practice({
       mode,
       topic: question,
       transcript: text.trim(),
+      transcriptSegments,
+      transcriptWords,
       duration: recorder.blob ? recorder.seconds : 0,
-      ruleProfile,
+      ruleProfile: realTaskMode && ruleProfile === "auto" ? realTaskTemplates[realTask.kind].profile : ruleProfile,
       framework:
-        retrySession?.framework ||
+        retrySession?.framework || followupSession?.framework ||
         (mode === "logic"
           ? thinking
             ? thinking.name
@@ -284,12 +318,14 @@ export function Practice({
     };
   }
   async function persist(report?: Feedback) {
+    if (!active.current) return;
     await saveSession(session(report));
+    if (!active.current) return;
     setSaved(true);
     await onSaved();
   }
   async function submit(requireAI: boolean) {
-    if (working) return;
+    if (!active.current || working || operationPending.current) return;
     if (text.trim().length < 5) {
       setError(
         recorder.blob
@@ -299,12 +335,14 @@ export function Practice({
       document.getElementById("transcript")?.focus();
       return;
     }
+    operationPending.current = true;
     const startedAt = Date.now();
     setAnalysisSeconds(undefined);
     setWorking(requireAI ? "正在阅读你的表达，生成点评…" : "正在整理本次练习…");
     setError("");
     try {
       await persist();
+      if (!active.current) return;
       const result = await analyze(session(), requireAI);
       if (!active.current) return;
       setSaved(false);
@@ -314,11 +352,12 @@ export function Practice({
       try {
         await persist(result);
       } catch (e) {
-        setError((e as Error).message);
+        if (active.current) setError((e as Error).message);
       }
     } catch (e) {
       if (active.current) setError((e as Error).message);
     } finally {
+      operationPending.current = false;
       if (active.current) {
         setWorking("");
         setAnalysisSeconds(Math.round((Date.now() - startedAt) / 1000));
@@ -326,19 +365,25 @@ export function Practice({
     }
   }
   async function saveOnly() {
+    if (!active.current || working || operationPending.current) return;
+    operationPending.current = true;
     setWorking("正在保存…");
     setError("");
     try {
       await persist(feedback);
+      if (!active.current) return;
       setNavigationGuard(undefined);
       go("/history");
     } catch (e) {
-      setError((e as Error).message);
+      if (active.current) setError((e as Error).message);
     } finally {
+      operationPending.current = false;
       if (active.current) setWorking("");
     }
   }
   async function cloudTranscribe(blob: Blob) {
+    if (!active.current || working || operationPending.current) return;
+    operationPending.current = true;
     setTranscriptionState("working");
     setWorking(
       status.asrMode === "local"
@@ -347,13 +392,15 @@ export function Practice({
     );
     setError("");
     try {
-      const result = await transcribe(blob);
+      const result = await transcribeDetailed(blob);
       if (active.current) {
-        setText(result);
+        setText(result.text);
+        setTranscriptSegments(result.segments);
+        setTranscriptWords(result.words);
         setFeedback(undefined);
         setSaved(false);
-        setTranscriptionState(result.trim() ? "done" : "error");
-        if (!result.trim()) setError("没有识别到语音，请回听录音或手动填写。");
+        setTranscriptionState(result.text.trim() ? "done" : "error");
+        if (!result.text.trim()) setError("没有识别到语音，请回听录音或手动填写。");
       }
     } catch (e) {
       if (active.current) {
@@ -361,6 +408,7 @@ export function Practice({
         setTranscriptionState("error");
       }
     } finally {
+      operationPending.current = false;
       if (active.current) setWorking("");
     }
   }
@@ -375,7 +423,14 @@ export function Practice({
         ? ["一句话概括主题", "保留关键理由与事实", "用自己的话重新组织"]
         : ["先说观点", "给出理由和例子", "用一句话收束"];
   const openTextPractice = (useDraft = false) => {
+    if (realTaskMode && !realTask.goal.trim()) {
+      setError("先写下这次沟通想达成什么，再开始练习。");
+      document.getElementById("real-task-goal")?.focus();
+      return;
+    }
     setText(useDraft ? draft : "");
+    setTranscriptSegments(undefined);
+    setTranscriptWords(undefined);
     setView("review");
     window.scrollTo(0, 0);
   };
@@ -470,8 +525,40 @@ export function Practice({
             <small>题目和点评标准保持不变，上次练习不会被覆盖。</small>
           </section>
         )}
+        {followupSession && view !== "report" && (
+          <section className="practice-focus" aria-label="连续对话">
+            <h3>模拟对话 · 第 {(followupSession.dialogueTurn || 1) + 1} 轮</h3>
+            <p>听众追问：{question}</p>
+            <button className="text-button" onClick={() => speakQuestion(question)}>朗读追问</button>
+            <small>先回答这一问。点评后可以继续追问；之前每轮的录音与文字会分别保存。</small>
+            {Boolean(followupSession.dialogue?.length) && <details><summary>回看前面的对话</summary>{followupSession.dialogue?.map((turn, i) => <p key={i}><strong>第 {i + 1} 轮：</strong>{turn.question}<br />{turn.answer}</p>)}</details>}
+          </section>
+        )}
         {view === "setup" && (
           <>
+            {realTaskMode && !retrySession && !followupSession && (
+              <section className="real-task-panel" aria-label="准备真实沟通任务">
+                <div className="real-task-heading">
+                  <div><span className="eyebrow">真实任务练习</span><h2>你最近需要说清楚什么？</h2></div>
+                  <small>下面的内容会作为 AI 点评背景，请勿填写真实姓名或敏感信息。</small>
+                </div>
+                <div className="real-task-kinds" role="group" aria-label="沟通场景">
+                  {(Object.entries(realTaskTemplates) as [RealTask["kind"], typeof realTaskTemplates[RealTask["kind"]]][]).map(([kind, template]) => (
+                    <button key={kind} className={realTask.kind === kind ? "selected" : ""} aria-pressed={realTask.kind === kind} onClick={() => {
+                      setRealTask((current) => ({ ...current, kind, goal: template.goal, criteria: template.criteria }));
+                      setRuleProfile(template.profile);
+                    }}>{template.label}</button>
+                  ))}
+                </div>
+                <div className="real-task-fields">
+                  <label>对谁说<input value={realTask.audience} maxLength={80} onChange={(e) => setRealTask({ ...realTask, audience: e.target.value })} placeholder="例如主管、同事、面试官" /></label>
+                  <label>希望达成什么<input id="real-task-goal" value={realTask.goal} maxLength={180} onChange={(e) => setRealTask({ ...realTask, goal: e.target.value })} placeholder="例如争取下周安排一次讨论" /></label>
+                  <label>必要背景<textarea value={realTask.context} maxLength={800} rows={3} onChange={(e) => setRealTask({ ...realTask, context: e.target.value })} placeholder="只写已确认的事实、限制和对方可能关心的事（可选）" /></label>
+                  <label>本次检查重点<textarea value={realTask.criteria} maxLength={500} rows={2} onChange={(e) => setRealTask({ ...realTask, criteria: e.target.value })} placeholder="你希望点评重点检查什么？" /></label>
+                </div>
+                <p><strong>推荐 {framework.name}</strong> · {realTaskTemplates[realTask.kind].hint} 你可以在反馈前调整点评场景。</p>
+              </section>
+            )}
             <div className="practice-setup-grid">
               <section className="practice-topic-panel">
                 {mode === "improv" && !lesson && !retrySession && (
@@ -881,6 +968,8 @@ export function Practice({
                   disabled={Boolean(working)}
                   onChange={(e) => {
                     setText(e.target.value);
+                    setTranscriptSegments(undefined);
+                    setTranscriptWords(undefined);
                     setSaved(false);
                     setFeedback(undefined);
                   }}
@@ -944,6 +1033,16 @@ export function Practice({
                   Boolean(working) || mode === "retell" || Boolean(retrySession)
                 }
               />
+              {realTaskMode && (
+                <div className="real-task-review">
+                  <strong>本次真实任务</strong>
+                  <p>听众：{realTask.audience || "未指定"} · 目标：{realTask.goal}</p>
+                  {realTask.context && <p>背景：{realTask.context}</p>}
+                  <p>检查重点：{realTask.criteria}</p>
+                  <small>Agnes 与兼容聊天模型会参考这份检查重点；Jev 使用固定场景规则。</small>
+                  {!retrySession && !followupSession && <button className="text-button" disabled={Boolean(working)} onClick={() => setView("setup")}>修改任务背景</button>}
+                </div>
+              )}
               {working && <AnalysisProgress message={working} />}
               {(error || recorder.error) && (
                 <div className="practice-recovery">
@@ -1007,6 +1106,7 @@ export function Practice({
               </div>
               {!status.ai && (
                 <AIRecovery
+                  key={JSON.stringify([sessionId, text, ruleProfile])}
                   disabled={Boolean(working)}
                   checkLabel="检查 AI 连接"
                   requested={aiCheckRequest}

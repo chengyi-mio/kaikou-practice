@@ -10,3 +10,9 @@ playwright-report/
 *.tsbuildinfo
 release/
 .build-cache/
+outputs/
+.github-publish/
+.impeccable/
+ai-service.json
+live-service.json
+services.env

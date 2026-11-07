@@ -1,5 +1,38 @@
 import { test, expect } from "@playwright/test";
 
+test("scenario framework labels and examples stay legible in the light theme", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/#/logic");
+  await page.getByRole("button", { name: "按场景练习", exact: true }).click();
+  await page.getByRole("button", { name: "向上求助", exact: true }).click();
+  const contrast = await page.evaluate(() => {
+    const rgb = (value: string) => (value.match(/[\d.]+/g) || []).slice(0, 3).map(Number);
+    const luminance = (value: string) => {
+      const channels = rgb(value).map((part) => {
+        const n = part / 255;
+        return n <= 0.04045 ? n / 12.92 : ((n + 0.055) / 1.055) ** 2.4;
+      });
+      return channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722;
+    };
+    const background = (element: Element) => {
+      for (let current: Element | null = element; current; current = current.parentElement) {
+        const color = getComputedStyle(current).backgroundColor;
+        if (color !== "rgba(0, 0, 0, 0)" && color !== "transparent") return color;
+      }
+      return "rgb(255, 255, 255)";
+    };
+    return [".scene-content .framework-picker button", ".scene-group > span", ".scene-recommendation > span", ".scene-recommendation p", ".framework-detail > p", ".example-row p"].map((selector) => {
+      const element = document.querySelector(selector);
+      if (!element) throw new Error(`Missing ${selector}`);
+      const foreground = luminance(getComputedStyle(element).color);
+      const backdrop = luminance(background(element));
+      return { selector, ratio: (Math.max(foreground, backdrop) + 0.05) / (Math.min(foreground, backdrop) + 0.05) };
+    });
+  });
+  for (const result of contrast) expect(result.ratio, result.selector).toBeGreaterThanOrEqual(4.5);
+  await page.screenshot({ path: ".reference-analysis/framework-contrast-0.11.2.png" });
+});
+
 for (const width of [390, 1280]) {
   test(`scenario selection carries task and structure into practice at ${width}px`, async ({
     page,
