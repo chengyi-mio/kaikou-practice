@@ -38,7 +38,7 @@ let app;
 try {
   app = await launch();
   let page = await app.firstWindow({ timeout: 120000 });
-  await page.getByRole("link", { name: "设置与说明" }).click();
+  await page.getByRole("link", { name: "设置与服务状态" }).first().click();
   await expect(page.getByLabel("模型服务", { exact: true })).toHaveValue(
     "agnes",
   );
@@ -78,8 +78,10 @@ try {
   await app.close();
   app = await launch();
   page = await app.firstWindow({ timeout: 120000 });
-  await page.getByRole("link", { name: "设置与说明" }).click();
+  await page.getByRole("link", { name: "设置与服务状态" }).first().click();
   await expect(page.getByLabel("API Key", { exact: true })).toHaveValue("");
+  await expect(page.getByText("已为当前接口保存密钥", { exact: false })).toBeVisible();
+  await expect(page.getByRole("button", { name: "显示新密钥" })).toHaveCount(0);
   await page.getByRole("button", { name: "测试连接", exact: true }).click();
   await expect(page.getByRole("status")).toContainText("连接成功");
   page.once("dialog", (dialog) => dialog.accept());

@@ -1,11 +1,12 @@
 import { defineConfig } from "@playwright/test";
+const port = Number(process.env.KAIKOU_E2E_PORT || 4173);
 export default defineConfig({
   testDir: "./tests/e2e",
   timeout: 40000,
   fullyParallel: false,
   workers: 1,
   use: {
-    baseURL: "http://127.0.0.1:4173",
+    baseURL: `http://127.0.0.1:${port}`,
     browserName: "chromium",
     channel: "msedge",
     viewport: { width: 390, height: 844 },
@@ -22,8 +23,9 @@ export default defineConfig({
   },
   webServer: {
     command: "npm start",
-    url: "http://127.0.0.1:4173",
-    reuseExistingServer: true,
+    url: `http://127.0.0.1:${port}`,
+    env: { PORT: String(port) },
+    reuseExistingServer: !process.env.KAIKOU_E2E_PORT,
     timeout: 30000,
   },
 });

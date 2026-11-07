@@ -7,6 +7,7 @@ import {
   GearSix,
   House,
   Microphone,
+  UserFocus,
   ShieldCheck,
 } from "@phosphor-icons/react";
 import { Brand, go } from "./components";
@@ -45,6 +46,7 @@ export function navigationGroup(path: string) {
 export const mainNavigation = [
   { path: "/", label: "今日练习", icon: House },
   { path: "/practice/improv", label: "开口训练", icon: Microphone },
+  { path: "/interview", label: "模拟面试", icon: UserFocus },
   { path: "/thinking", label: "方法学习", icon: BookOpen },
   { path: "/history", label: "我的练习", icon: ClockCounterClockwise },
 ];
@@ -188,6 +190,16 @@ export function DesktopHome({
           {error}
         </p>
       )}
+      <section className="real-task-home" aria-label="真实任务练习">
+        <div>
+          <span>带着真实任务练</span>
+          <h2>你最近需要说清楚什么？</h2>
+          <p>工作汇报、解释延期、提出需求或面试回答。写下对象和目的，再用自己的话练一遍。</p>
+        </div>
+        <button className="button primary" onClick={() => go("/practice/logic?real=1")}>
+          准备一次真实沟通 <ArrowRight size={18} />
+        </button>
+      </section>
       <section className="today-hero">
         <div>
           <span className="hero-kicker">

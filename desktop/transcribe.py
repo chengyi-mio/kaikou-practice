@@ -13,9 +13,11 @@ try:
         audio = sys.stdin.buffer.read(12 * 1024 * 1024 + 1)
         if len(audio) > 12 * 1024 * 1024:
             raise ValueError("Audio too large")
-        segments, _ = model.transcribe(io.BytesIO(audio), language="zh", vad_filter=True, beam_size=3, condition_on_previous_text=False)
-        text = "".join(segment.text for segment in segments).strip()
-        print(json.dumps({"text": text[:6000]}, ensure_ascii=False))
+        segments, _ = model.transcribe(io.BytesIO(audio), language="zh", vad_filter=True, beam_size=3, condition_on_previous_text=False, word_timestamps=True)
+        parts = [{"start": round(segment.start, 2), "end": round(segment.end, 2), "text": segment.text,
+                  "words": [{"start": round(word.start, 2), "end": round(word.end, 2), "word": word.word} for word in (segment.words or [])]} for segment in segments]
+        text = "".join(part["text"] for part in parts).strip()
+        print(json.dumps({"text": text[:6000], "segments": parts}, ensure_ascii=False))
 except Exception:
     print(json.dumps({"error": "本机语音识别未完成，请检查本地模型是否可用并重试。"}, ensure_ascii=False))
     sys.exit(1)

@@ -48,6 +48,7 @@ export function TrainingTabs({ active }: { active: string }) {
         { path: "/practice/improv", label: "即兴表达" },
         { path: "/logic", label: "场景表达" },
         { path: "/library", label: "复述练习" },
+        { path: "/interview", label: "模拟面试" },
       ]}
     />
   );

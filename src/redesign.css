@@ -483,6 +483,52 @@ select option {
   color: #2f5d50;
   border-color: #8ca596;
 }
+.logic-content .framework-picker button,
+.scene-content .framework-picker button {
+  background: #fff;
+  color: #203b34;
+  border-color: #cbd8cd;
+}
+.logic-content .framework-picker button:hover,
+.scene-content .framework-picker button:hover {
+  background: #f0f4ef;
+  border-color: #8ca596;
+}
+.logic-content .framework-picker button.selected,
+.scene-content .framework-picker button.selected {
+  background: #e1ece1;
+  color: #204a3f;
+  border-color: #729883;
+}
+.framework-detail,
+.framework-detail h2,
+.example-block h3,
+.scene-alternative h3 {
+  color: #203b34;
+}
+.detail-heading,
+.example-row > span,
+.scene-recommendation > span,
+.scene-preview > span {
+  color: #2f5d50;
+}
+.framework-detail > p,
+.example-row p,
+.scene-recommendation p,
+.scene-alternative p,
+.structure-steps > span,
+.tip-line,
+.scene-group > span {
+  color: #40574c;
+}
+.scene-tabs button {
+  background: #fff;
+  border-color: #cbd8cd;
+  color: #2f5d50;
+}
+.scene-tabs button[aria-pressed="true"] {
+  border-color: #2f5d50;
+}
 .scene-tabs button[aria-pressed="true"] {
   background: #2f5d50;
   color: white;
@@ -499,6 +545,18 @@ select option {
 .scene-content .structure-steps i {
   background: #2f5d50;
   color: white;
+}
+.framework-detail .example-block {
+  padding: 20px clamp(16px, 2vw, 24px);
+}
+.framework-detail .example-row:last-child {
+  margin-bottom: 0;
+}
+.service-config .service-key-state {
+  margin: 10px 0 0;
+  color: #2f5d50;
+  font-size: 13px;
+  line-height: 1.6;
 }
 .plan-hero {
   background: #2f5d50;

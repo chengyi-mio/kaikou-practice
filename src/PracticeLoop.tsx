@@ -2,6 +2,10 @@ import { useEffect, useId, useState } from "react";
 import { ArrowRight, ArrowUpRight, CheckCircle } from "@phosphor-icons/react";
 import { AudioPlayer, Report, go } from "./components";
 import { AttemptComparison } from "./ScenarioReport";
+import { generateFollowup } from "./api";
+import { findPauses, type Pause } from "./audioInsights";
+import { deliveryMetrics, timeForEvidence } from "./deliveryMetrics";
+import { speakQuestion } from "./voicePrompt";
 import type { Session } from "./types";
 
 export function PracticeNext({
@@ -13,6 +17,9 @@ export function PracticeNext({
 }) {
   const tasks = session.feedback?.improvements.slice(0, 2) || [];
   const [selected, setSelected] = useState(0);
+  const [followup, setFollowup] = useState("");
+  const [followupBusy, setFollowupBusy] = useState(false);
+  const [followupError, setFollowupError] = useState("");
   const selectedFocus = Math.min(selected, Math.max(0, tasks.length - 1));
   if (!session.feedback) return null;
   return (
@@ -67,6 +74,24 @@ export function PracticeNext({
         同题再练 {session.targetDuration || 60} 秒 · 两次练习分别保存
       </small>
       <small>保留话题、结构与本轮改进重点，练完后对照两次表达</small>
+      {session.feedback.source === "ai" && Boolean(session.transcript) && (
+        <div className="followup-card">
+          <h4>{session.followupOf ? "继续模拟对话" : "开始模拟对话"} · 下一轮</h4>
+          <p>让 AI 扮演听众，结合之前的回答继续追问。可以朗读问题并录音作答，每一轮分别保存。</p>
+          {!followup ? (
+            <button className="button secondary" disabled={disabled || followupBusy} onClick={async () => {
+              setFollowupBusy(true);
+              setFollowupError("");
+              try { setFollowup(await generateFollowup(session)); }
+              catch (error) { setFollowupError((error as Error).message); }
+              finally { setFollowupBusy(false); }
+            }}>{followupBusy ? "正在生成追问…" : "生成听众追问"}</button>
+          ) : (
+            <><blockquote>{followup}</blockquote><button className="text-button" onClick={() => speakQuestion(followup)}>朗读问题</button><button className="button secondary" disabled={disabled} onClick={() => go(`/practice/${session.mode === "logic" ? "logic" : "improv"}?followup=${encodeURIComponent(session.id)}&question=${encodeURIComponent(followup)}`)}>录音回答这个问题 <ArrowRight size={16} /></button></>
+          )}
+          {followupError && <p role="alert">{followupError}</p>}
+        </div>
+      )}
       {disabled && (
         <p className="next-disabled">
           先保存本次点评或文字修改，再开始下一次。
@@ -89,6 +114,7 @@ export function FeedbackReview({
 }) {
   const id = useId();
   const [section, setSection] = useState("feedback");
+  const [seekTo, setSeekTo] = useState<{ time: number; nonce: number }>();
   const feedback = session.feedback;
   if (!feedback) return null;
   const target =
@@ -172,14 +198,16 @@ export function FeedbackReview({
           <section className="feedback-evidence">
             <h3>从你的表达里看到的</h3>
             {evidence.length ? (
-              evidence.map((quote, i) => (
-                <blockquote key={i}>{quote}</blockquote>
-              ))
+              evidence.map((quote, i) => {
+                const time = session.audio ? timeForEvidence(quote, session.transcript, session.transcriptSegments, session.transcriptWords) : undefined;
+                return <blockquote key={i}>{quote}{time !== undefined && <button className="text-button evidence-seek" onClick={() => setSeekTo({ time, nonce: Date.now() })}>从 {time.toFixed(1)} 秒处听原话</button>}</blockquote>;
+              })
             ) : (
               <p className="feedback-empty-evidence">
                 这份反馈没有定位到相关原话。可以回看完整文字，结合实际沟通目的判断。
               </p>
             )}
+            {Boolean(session.audio && session.transcriptSegments?.length) && <AudioPlayer blob={session.audio} seekTo={seekTo} />}
             <button
               className="text-button"
               onClick={() => showSection("transcript")}
@@ -225,6 +253,7 @@ export function FeedbackReview({
         </button>
       </footer>
       <section id={`${id}-analysis`} className="feedback-full-analysis">
+        <AudioObservations session={session} />
         <Report feedback={feedback} />
       </section>
       {!onViewTranscript && (
@@ -266,6 +295,25 @@ export function FeedbackReview({
       </section>
     </div>
   );
+}
+
+function AudioObservations({ session }: { session: Session }) {
+  const [pauses, setPauses] = useState<Pause[] | null>(null);
+  useEffect(() => {
+    let live = true;
+    setPauses(null);
+    if (session.audio) void findPauses(session.audio).then((value) => { if (live) setPauses(value); }).catch(() => { if (live) setPauses([]); });
+    return () => { live = false; };
+  }, [session.audio]);
+  if (!session.audio || !session.feedback) return null;
+  const { fillers } = session.feedback.metrics;
+  const timed = deliveryMetrics(session.transcript, session.transcriptSegments, session.transcriptWords);
+  return <section className="audio-observations" aria-label="录音与文字观察">
+    <h3>录音与文字观察</h3>
+    <div><span><strong>{session.duration}</strong> 秒录音</span><span><strong>{timed?.charactersPerMinute ?? "—"}</strong> 识别片段字/分钟</span><span><strong>{fillers}</strong> 处常见填充词</span></div>
+    {timed ? <p>转写时间戳显示约 {timed.voicedSeconds} 秒的识别片段，{timed.pauses.length} 段 0.8 秒以上的片段间停顿{timed.pauses.length ? `（${timed.pauses.slice(0, 4).map((gap) => `${gap.start.toFixed(1)} 秒处`).join("、")}）` : ""}。</p> : pauses && <p>{pauses.length ? `音量检测到 ${pauses.length} 段较长低音量间隔。` : "暂无可确认的段间停顿数据。"}重新使用支持时间戳的语音转写，可获得更可靠的定位。</p>}
+    <small>{timed ? "语速基于转写文本和分段时间戳；原话定位优先使用词级时间戳。识别边界仍可能有误差。" : "没有可信的转写时间戳时不计算语速；低音量可能是环境变化，并不等于真实停顿。"}填充词可能有正常含义，请回听核对；这里不评价情绪或声音质量。</small>
+  </section>;
 }
 
 export function AnalysisProgress({ message }: { message: string }) {

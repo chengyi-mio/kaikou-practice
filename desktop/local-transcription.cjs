@@ -60,7 +60,7 @@ function createLocalTranscription({
     async transcribe(buffer) {
       if (!ready) throw new Error("本机语音识别尚未就绪，请稍后重试。");
       if (active) throw new Error("已有录音正在识别，请等待完成。");
-      return (await run([], buffer)).text;
+      return await run([], buffer);
     },
     close() {
       active?.kill();

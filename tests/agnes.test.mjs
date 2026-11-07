@@ -46,3 +46,10 @@ test('Agnes evidence references restore exact source segments and reject nonexis
   response.dimensions[0].evidence = ['s999'];
   assert.throws(() => parseAgnes(JSON.stringify(response), fixture.input), /Unverified quotation/);
 });
+test('Agnes accepts several verified evidence quotes without relaxing source validation', () => {
+  const response = structuredClone(fixture.feedback);
+  response.dimensions[1].evidence = ['项目要延期了', '人手也不够', '大家再努力一下'];
+  assert.deepEqual(parseAgnes(JSON.stringify(response), fixture.input).dimensions[1].evidence, response.dimensions[1].evidence);
+  response.dimensions[1].evidence.push('并未说过的时间');
+  assert.throws(() => parseAgnes(JSON.stringify(response), fixture.input), /Unverified quotation/);
+});

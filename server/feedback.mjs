@@ -13,6 +13,13 @@ export const analysisInput = z.object({
   ruleProfile: z
     .enum(["auto", "general", "report", "interview", "persuade", "retell"])
     .optional(),
+  realTask: z.object({
+    kind: z.enum(["report", "delay", "request", "interview"]),
+    audience: z.string().trim().max(80),
+    goal: z.string().trim().min(1).max(180),
+    context: z.string().trim().max(800),
+    criteria: z.string().trim().max(500),
+  }).optional(),
 });
 export const reportSchema = z.object({
   summary: z.string().min(1).max(1200),
@@ -96,6 +103,7 @@ export function buildMessages(input) {
           : undefined,
         originalMaterial: input.material,
         transcript: input.transcript,
+        realTask: input.realTask,
       }),
     },
   ];

@@ -3,6 +3,7 @@ import { ArrowRight, CaretRight, Clock } from "@phosphor-icons/react";
 import { BottomNav, Empty, ErrorNote, Header, go } from "./components";
 import { modeNames } from "./data";
 import type { Session } from "./types";
+import { ProgressTrend } from "./ProgressTrend";
 
 /** Retry links, rather than identical topic text, define one intentional series. */
 export function groupAttempts(sessions: Session[]) {
@@ -82,6 +83,7 @@ export function History({
           ))}
         </div>
         {error && <ErrorNote>{error}</ErrorNote>}
+        <ProgressTrend sessions={sessions} />
         <div className="history-workspace">
           <section className="history-series">
             <label className="history-search">
@@ -123,7 +125,7 @@ export function History({
                         </div>
                         <h2>{session.topic}</h2>
                         <p>
-                          {series.length} 次尝试
+                          {session.followupOf ? "听众追问 · " : ""}{series.length} 次尝试
                           {session.framework ? ` · ${session.framework}` : ""}
                         </p>
                         <div className="history-card-bottom">
