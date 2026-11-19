@@ -7,7 +7,7 @@ test("real work task reaches the review request and keeps AI entry visible", asy
     request = route.request().postDataJSON();
     return route.fulfill({ json: { source: "basic", summary: "基础自查", dimensions: [], improvements: ["补充行动"], rewrite: "", metrics: { characters: 35, duration: 0, fillers: 0 } } });
   });
-  await page.goto("/#/");
+  await page.goto("/#/logic");
   await page.getByRole("button", { name: "准备一次真实沟通" }).click();
   await expect(page.getByRole("heading", { name: "你最近需要说清楚什么？" })).toBeVisible();
   await page.getByRole("button", { name: "解释延期" }).click();
@@ -40,6 +40,7 @@ test("an AI listener question becomes a separate linked practice", async ({ page
   await page.getByRole("button", { name: "也可以用文字练习" }).click();
   await page.getByLabel("我的表达", { exact: true }).fill("项目延期了，我明天会确认影响。 ");
   await page.getByRole("button", { name: "生成 AI 点评", exact: true }).click();
+  await page.locator('.followup-card > summary').click();
   await page.getByRole("button", { name: "生成听众追问" }).click();
   await expect(page.getByText("如果主管担心客户受影响，你准备如何回应？")).toBeVisible();
   await page.getByRole("button", { name: "录音回答这个问题" }).click();
@@ -51,6 +52,7 @@ test("an AI listener question becomes a separate linked practice", async ({ page
   await expect(page.getByText("听众追问", { exact: false }).first()).toBeVisible();
   await page.locator(".history-card").first().click();
   await page.getByRole("button", { name: "生成 AI 点评", exact: true }).click();
+  await page.locator('.followup-card > summary').click();
   await page.getByRole("button", { name: "生成听众追问" }).click();
   await expect(page.getByText("如果客户要求今天确认时间，你会怎样答复？")).toBeVisible();
   expect(followupRequests[1]).toMatchObject({ history: [{ answer: "项目延期了，我明天会确认影响。" }] });

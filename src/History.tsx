@@ -1,9 +1,13 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ArrowRight, CaretRight, Clock } from "@phosphor-icons/react";
 import { BottomNav, Empty, ErrorNote, Header, go } from "./components";
 import { modeNames } from "./data";
 import type { Session } from "./types";
 import { ProgressTrend } from "./ProgressTrend";
+import { InterviewTrainingHistory } from "./InterviewJourney";
+import { InterviewRecordDetail, InterviewRecordings } from "./InterviewRecordDetail";
+import { interviewRecordPath, readInterviewRecords } from "./interviewRecords";
+import "./records-disclosure.css";
 
 /** Retry links, rather than identical topic text, define one intentional series. */
 export function groupAttempts(sessions: Session[]) {
@@ -36,16 +40,34 @@ export function History({
   const [filter, setFilter] = useState("all");
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState("");
+  const [hash, setHash] = useState(window.location.hash);
+  const [interviews, setInterviews] = useState(readInterviewRecords);
+  const refreshInterviews = () => setInterviews(readInterviewRecords());
+  useEffect(() => {
+    const route = () => setHash(window.location.hash);
+    window.addEventListener("hashchange", route);
+    window.addEventListener("storage", refreshInterviews);
+    window.addEventListener("kaikou-interview-records-changed", refreshInterviews);
+    return () => {
+      window.removeEventListener("hashchange", route);
+      window.removeEventListener("storage", refreshInterviews);
+      window.removeEventListener("kaikou-interview-records-changed", refreshInterviews);
+    };
+  }, []);
+  const params = new URLSearchParams(hash.split("?")[1] || "");
+  const category = ["expression", "interview"].includes(params.get("type") || "") ? params.get("type")! : "all";
+  const detailId = params.get("id"), detailKind = params.get("kind");
+  const detail = interviews.records.find(record => record.id === detailId && record.kind === detailKind);
   const groups = groupAttempts(sessions)
     .map((series) =>
-      filter === "pending"
+      category === "expression" && filter === "pending"
         ? series.filter((attempt) => !attempt.feedback)
         : series,
     )
     .filter((series) =>
       series.some(
         (s) =>
-          (filter === "all" ||
+          (category !== "expression" || filter === "all" ||
             (filter === "pending" ? !s.feedback : s.mode === filter)) &&
           (!query.trim() ||
             `${s.topic} ${s.transcript} ${s.createdAt} ${new Date(s.createdAt).toLocaleDateString("zh-CN")}`
@@ -56,15 +78,28 @@ export function History({
   const active =
     groups.find((series) => series.some((s) => s.id === selected)) || groups[0];
   const latest = active?.[0];
+  const search = query.trim().toLowerCase();
+  const interviewMatches = interviews.records.filter(record => !search ||
+    `${record.source?.role || ""} ${record.time} ${record.report?.summary || ""} ${record.turns.map(t => `${t.question} ${t.answer}`).join(" ")}`.toLowerCase().includes(search));
+  const entries = [
+    ...(category !== "interview" ? groups.map(series => ({ type: "expression" as const, time: series[0].createdAt, series })) : []),
+    ...(category !== "expression" ? interviewMatches.map(record => ({ type: "interview" as const, time: record.time, record })) : []),
+  ].sort((a, b) => b.time.localeCompare(a.time));
+  if (detailId) return <><Header title="面试记录" back="/history?type=interview" /><main className="page-content history-content unified-history">
+    {detail ? <InterviewRecordDetail key={`${detail.kind}:${detail.id}`} record={detail} onChanged={refreshInterviews} /> : <Empty title="没有找到这条面试记录" text={interviews.error || "记录可能已移除。当前面试草稿和录音不会因此改变。"}><button className="button secondary" onClick={() => go("/history?type=interview")}>返回面试记录</button></Empty>}
+  </main><BottomNav active="/history" /></>;
   return (
     <>
-      <Header title="我的练习" />
-      <main className="page-content history-content redesigned-history">
+      <Header title="练习记录" />
+      <main className="page-content history-content redesigned-history unified-history">
         <div className="page-intro">
-          <h1>看见一次次表达的变化</h1>
-          <p>保留每次尝试，也保留你下一次想改进的那一点</p>
+          <h1>练习记录</h1>
+          <p>回看表达与面试，接着上一次继续练。</p>
         </div>
-        <div className="filter-chips" aria-label="练习类型">
+        <div className="filter-chips record-category" aria-label="记录分类">
+          {[["all", "全部记录"], ["expression", "表达训练"], ["interview", "模拟面试"]].map(([value, label]) => <button key={value} className={category === value ? "selected" : ""} aria-pressed={category === value} onClick={() => { setSelected(""); setFilter("all"); go(value === "all" ? "/history" : `/history?type=${value}`); }}>{label}</button>)}
+        </div>
+        {category === "expression" && <div className="filter-chips" aria-label="练习类型">
           {[
             ["all", "全部练习"],
             ["improv", "即兴表达"],
@@ -81,9 +116,10 @@ export function History({
               {label}
             </button>
           ))}
-        </div>
+        </div>}
         {error && <ErrorNote>{error}</ErrorNote>}
-        <ProgressTrend sessions={sessions} />
+        {interviews.error && category !== "expression" && <ErrorNote>{interviews.error} <button className="text-button" onClick={refreshInterviews}>重新读取面试记录</button></ErrorNote>}
+        {category === "expression" && sessions.length > 0 && <details className="record-disclosure"><summary>表达练习趋势</summary><ProgressTrend sessions={sessions} /></details>}
         <div className="history-workspace">
           <section className="history-series">
             <label className="history-search">
@@ -96,9 +132,17 @@ export function History({
                 aria-label="搜索练习"
               />
             </label>
-            {groups.length ? (
+            {entries.length ? (
               <div className="history-list">
-                {groups.map((series) => {
+                {entries.map((entry) => {
+                  if (entry.type === "interview") {
+                    const record = entry.record;
+                    return <article className="history-series-card interview-history-card" key={`${record.kind}:${record.id}`}><button className="history-card" onClick={() => go(interviewRecordPath(record))}>
+                      <div className="history-card-top"><span className="tag">{record.kind === "live" ? "LIVE 面试" : "逐题面试"}</span><time>{record.time ? new Date(record.time).toLocaleString("zh-CN", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "日期未记录"}</time></div>
+                      <h2>{record.source?.role || "模拟面试"}</h2><p>{record.report?.summary || "查看本轮问答与复盘"}</p><div className="history-card-bottom"><span>{record.turns.length} 题</span><span>{record.report ? "AI 面试复盘" : "生成 AI 面试复盘"}<CaretRight size={16} /></span></div>
+                    </button></article>;
+                  }
+                  const series = entry.series;
                   const session = series[0];
                   return (
                     <article
@@ -162,7 +206,7 @@ export function History({
                 title={
                   error
                     ? "暂时无法读取练习记录"
-                    : sessions.length
+                    : sessions.length || interviews.records.length
                       ? "没有找到这类练习"
                       : "第一条记录，等你开口"
                 }
@@ -174,14 +218,14 @@ export function History({
               >
                 <button
                   className="button primary"
-                  onClick={() => go("/practice/improv")}
+                  onClick={() => go(category === "interview" ? "/interview" : "/practice/improv")}
                 >
-                  开始一次练习 <ArrowRight size={19} />
+                  {category === "interview" ? "开始模拟面试" : "开始一次练习"} <ArrowRight size={19} />
                 </button>
               </Empty>
             )}
           </section>
-          {latest && (
+          {latest && selected && category !== "interview" && (
             <aside className="history-preview" aria-label="表达内容预览">
               <h2>{active.length > 1 ? "同题对比" : "这一次的表达"}</h2>
               <p>
@@ -262,6 +306,10 @@ export function History({
             </aside>
           )}
         </div>
+        {category === "interview" && <>
+          <details className="record-disclosure"><summary>面试后的专项训练</summary><InterviewTrainingHistory /></details>
+          <details className="record-disclosure"><summary>LIVE 通话录音库 · 回放与下载</summary><InterviewRecordings /></details>
+        </>}
         <p className="center-note">
           {window.desktopApp
             ? "记录保存在当前电脑中"

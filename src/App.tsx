@@ -105,6 +105,11 @@ function Logic({
           ) : (
             <TrainingTabs active="/logic" />
           )}
+          {!structures && (
+            <button className="text-button scene-real-task-link" onClick={() => go("/practice/logic?real=1")}>
+              准备一次真实沟通 <ArrowRight size={17} />
+            </button>
+          )}
           <div className="scene-tabs" role="group" aria-label="浏览方式">
             <button
               aria-pressed={tab === "scene"}

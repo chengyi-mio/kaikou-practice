@@ -15,7 +15,7 @@ async function syntheticMicrophone(page: import('@playwright/test').Page) {
 }
 async function begin(page: import('@playwright/test').Page) {
   await page.getByRole('button',{name:'开始 LIVE 面试',exact:true}).click();
-  await expect(page.getByText('正在录制双方声音',{exact:true})).toBeVisible();
+  await expect(page.locator('.live-recording-disclosure > summary')).toContainText('正在录制双方声音');
   await expect(page.locator('.live-current-question')).toContainText('请介绍');
 }
 async function readRecords(page: import('@playwright/test').Page) {
@@ -25,8 +25,12 @@ async function readRecords(page: import('@playwright/test').Page) {
   });
 }
 
-test('双方声音保存、回放下载、跨页面与重载、复盘关联及只删除音频',async({page})=>{
+test('播放静音时双方声音仍保存、回放下载、跨页面与重载、复盘关联及只删除音频',async({page})=>{
   await syntheticMicrophone(page);await nativePeer(page);await prepare(page);await begin(page);
+  await page.locator('.live-output-control > summary').click();
+  await page.getByRole('slider', { name: '面试官播放音量', exact: true }).fill('0');
+  await expect(page.getByLabel('面试官播放已静音', { exact: true })).toBeVisible();
+  await page.locator('.live-output-control > summary').click();
   await page.waitForTimeout(2400);
   await page.evaluate(()=>(window as any).__emit([{type:'input_audio_buffer.speech_started',item_id:'a'},{type:'conversation.item.input_audio_transcription.completed',item_id:'a',transcript:'我负责需求分析和项目交付。'}]));
   await page.getByRole('button',{name:'结束 / 暂停通话',exact:true}).click();
@@ -59,9 +63,14 @@ test('双方声音保存、回放下载、跨页面与重载、复盘关联及�
   await page.setViewportSize({width:1080,height:720});await page.locator('.live-recordings').evaluate(e=>e.scrollIntoView({block:'start'}));await page.screenshot({path:'.impeccable/review/recording-compact.png'});
   page.once('dialog',d=>d.accept());await page.getByRole('button',{name:'开始新一轮 LIVE',exact:true}).click();
   await page.locator('.live-recording-history summary').click();await expect(page.locator('.live-recording-row')).toHaveCount(1);
-  page.once('dialog',d=>d.accept());await page.getByRole('button',{name:'查看对应复盘'}).click();await expect(page.getByText('这是录音关联测试复盘。')).toBeVisible();
-  page.once('dialog',d=>d.accept());await page.getByRole('button',{name:'删除录音',exact:true}).click();await expect(page.locator('.live-recording-row')).toHaveCount(0);
-  await expect(page.getByText('这是录音关联测试复盘。')).toBeVisible();await expect(page.getByLabel(/第 \d+ 条回答文字/)).toHaveValue('我负责需求分析和项目交付。');
+  const nextDraft = await page.evaluate(() => localStorage.getItem('kaikou.live-interview.draft.v1'));
+  await page.getByRole('button',{name:'查看对应复盘'}).click();await expect(page.getByText('这是录音关联测试复盘。')).toBeVisible();
+  expect(await page.evaluate(() => localStorage.getItem('kaikou.live-interview.draft.v1'))).toBe(nextDraft);
+  await page.locator('.record-disclosure > summary').filter({hasText:'本轮通话录音'}).click();
+  page.once('dialog',d=>d.accept());await page.getByRole('button',{name:'删除录音',exact:true}).click();await expect(page.locator('.saved-interview-audio')).toHaveCount(0);
+  await expect(page.getByText('这是录音关联测试复盘。')).toBeVisible();
+  await page.locator('.record-disclosure > summary').filter({hasText:'查看本轮问答'}).click();
+  await expect(page.locator('.saved-question p').filter({hasText:'我负责需求分析和项目交付。'})).toBeVisible();
   expect(await readRecords(page)).toHaveLength(0);
 });
 
@@ -72,6 +81,7 @@ test('窗口异常退出后，已经逐段写入的录音仍能下载回放',asy
   await page.close({runBeforeUnload:false});
   const recovered=await context.newPage();await recovered.goto('/#/interview');
   await expect(recovered.locator('.live-recording-row')).toHaveCount(1);await expect(recovered.locator('.live-recording-row')).toContainText('中断保留');
+  if (!await recovered.getByRole('button',{name:'回放录音',exact:true}).isVisible()) await recovered.locator('.live-recording-disclosure > summary').click();
   await recovered.getByRole('button',{name:'回放录音',exact:true}).click();
   const audio=recovered.locator('.live-recording-row audio');
   await expect.poll(()=>audio.evaluate((a:HTMLAudioElement)=>Number.isFinite(a.duration)&&a.duration>0)).toBe(true);
@@ -82,8 +92,8 @@ test('断线保存当前录音，重连分段，离开页面后仍可恢复',asy
   await syntheticMicrophone(page);await nativePeer(page);await prepare(page);await begin(page);await page.waitForTimeout(1200);
   await page.evaluate(()=>(window as any).__channel.close());await expect(page.getByRole('alert')).toContainText('通道已关闭');
   await expect(page.locator('.live-recording-row')).toHaveCount(1);await expect(page.locator('.live-recording-row')).toContainText('中断保留');
-  await page.getByRole('button',{name:'重新连接 / 继续本轮',exact:true}).click();await expect(page.getByText('正在录制双方声音',{exact:true})).toBeVisible();await page.waitForTimeout(1200);
-  page.once('dialog',d=>d.accept());await page.getByRole('link',{name:'今日练习',exact:true}).first().click();
+  await page.getByRole('button',{name:'重新连接 / 继续本轮',exact:true}).click();await expect(page.locator('.live-recording-disclosure > summary')).toContainText('正在录制双方声音');await page.waitForTimeout(1200);
+  page.once('dialog',d=>d.accept());await page.getByRole('link',{name:'首页',exact:true}).first().click();
   await expect.poll(async()=> (await readRecords(page)).filter(r=>r.bytes>0).length).toBe(2);
   await page.goto('/#/interview');await expect(page.locator('.live-recording-row')).toHaveCount(2);
   const records=await readRecords(page);expect(new Set(records.map(r=>r.roundId)).size).toBe(1);expect(new Set(records.map(r=>r.id)).size).toBe(2);

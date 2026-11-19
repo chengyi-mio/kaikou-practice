@@ -12,6 +12,7 @@ test('scenario checks, exact quotations, targeted revision and persisted compari
  await page.locator('.history-card').click();
  await page.getByLabel('点评场景').selectOption('report');
  await page.getByRole('button',{name:'生成 AI 点评',exact:true}).click();
+ await page.locator('.feedback-full-analysis > summary').click();
  await expect(page.getByLabel('Jev 场景检查')).toBeVisible();
  await expect(page.locator('.jev-detail')).toContainText('可执行动作');
  await page.getByRole('button',{name:/解释具体原因/}).click();
@@ -19,7 +20,7 @@ test('scenario checks, exact quotations, targeted revision and persisted compari
  await page.locator('#saved-transcript').fill(fixtures[1].input.transcript);
  await page.getByRole('button',{name:'重新生成 AI 点评',exact:true}).click();
  await expect(page.getByLabel('修改前后对比')).toContainText('待补充 → 已体现');
- await page.reload();await expect(page.getByLabel('修改前后对比')).toBeVisible();
+ await page.reload();await page.locator('.feedback-comparison-section > summary').click();await expect(page.getByLabel('修改前后对比')).toBeVisible();
  await expect(page.getByLabel('点评场景')).toHaveValue('report');
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
 });

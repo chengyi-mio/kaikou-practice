@@ -1,0 +1,170 @@
+/* Single-page practice: keep the question central and disclose supporting detail. */
+.app-shell .practice-redesign.expression-simplified .practice-setup-grid {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+}
+.app-shell .practice-redesign.expression-simplified .practice-workspace .practice-topic-panel {
+  min-height: 0;
+}
+.app-shell .practice-redesign.expression-simplified .practice-workspace .practice-setup-panel {
+  background: #fff;
+}
+.app-shell .practice-redesign.expression-simplified .practice-setup-panel > h2 {
+  font-size: 18px;
+  margin: 0 0 14px;
+}
+.app-shell .practice-redesign.expression-simplified .practice-input-switch {
+  max-width: 480px;
+}
+.app-shell .practice-redesign.expression-simplified .practice-start > .button {
+  width: auto;
+  min-width: 220px;
+}
+.app-shell .practice-redesign.expression-simplified .preparation-draft > details {
+  border-top: 1px solid #dfe6df;
+  padding-top: 12px;
+}
+.app-shell .practice-redesign.expression-simplified .preparation-draft details > label {
+  display: block;
+  color: #354b43;
+  margin: 12px 0 8px;
+  font-size: 14px;
+}
+.app-shell .practice-redesign.expression-simplified .preparation-draft summary {
+  font-size: 14px;
+  color: #2f5d50;
+  min-height: 36px;
+}
+.app-shell .expression-disclosure {
+  color: #354b43;
+  border: 1px solid #dfe6df;
+  border-radius: 12px;
+  background: #fff;
+  margin: 12px 0;
+  padding: 0 18px;
+}
+.app-shell .expression-disclosure > summary {
+  cursor: pointer;
+  padding: 16px 0;
+  color: #2f5d50;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.app-shell .expression-disclosure > summary > span {
+  display: inline;
+  margin-left: 12px;
+  color: #52665c;
+  font-size: 13px;
+  font-weight: 400;
+}
+.app-shell .expression-disclosure[open] {
+  padding-bottom: 18px;
+}
+.app-shell .expression-disclosure > summary:focus-visible,
+.app-shell .practice-redesign.expression-simplified .preparation-draft summary:focus-visible {
+  outline: 2px solid #2f5d50;
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+.app-shell .practice-redesign.expression-simplified .practice-settings {
+  margin: 16px 0;
+  background: #f6f8f4;
+}
+.app-shell .practice-redesign.expression-simplified .practice-settings .prep-options {
+  max-width: 440px;
+}
+.app-shell .feedback-redesign.feedback-simplified .feedback-coaching-grid {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+}
+.app-shell .feedback-redesign.feedback-simplified .feedback-coaching-content {
+  gap: 0;
+  padding: 22px 26px;
+  background: #fff;
+  border: 1px solid #dfe6df;
+  border-radius: 12px;
+}
+.app-shell .feedback-redesign.feedback-simplified .feedback-coaching-content > section {
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  background: transparent;
+}
+.app-shell .feedback-redesign.feedback-simplified .feedback-evidence {
+  margin-top: 20px;
+}
+.app-shell .feedback-redesign.feedback-simplified .practice-next {
+  background: #eff3ee;
+  color: #203b33;
+  border-radius: 12px;
+  padding: 22px 26px;
+}
+.app-shell .feedback-redesign.feedback-simplified .practice-next h3 {
+  color: #203b33;
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+}
+.app-shell .feedback-redesign.feedback-simplified .practice-next :is(p, label, legend, small, blockquote),
+.app-shell .feedback-redesign.feedback-simplified .practice-next label:has(input:checked) span,
+.app-shell .feedback-redesign.feedback-simplified .practice-next .followup-card .text-button {
+  color: #354b43;
+}
+.app-shell .feedback-redesign.feedback-simplified .practice-next .followup-card p[role="alert"],
+.app-shell .feedback-redesign.feedback-simplified .practice-next .next-disabled {
+  color: #8c3d22;
+}
+.app-shell .feedback-redesign.feedback-simplified .practice-next > .button {
+  width: auto;
+  background: #2f5d50;
+  color: #fff;
+  margin: 12px 0 4px;
+}
+.app-shell .feedback-redesign.feedback-simplified .practice-next > .button:hover:not(:disabled) {
+  background: #254b40;
+}
+.app-shell .feedback-redesign.feedback-simplified .practice-next .expression-disclosure {
+  background: transparent;
+  border: 0;
+  border-top: 1px solid #cbd8cb;
+  border-radius: 0;
+  padding: 0;
+  margin: 8px 0;
+}
+.app-shell .feedback-redesign.feedback-simplified .practice-next .expression-disclosure > summary {
+  font-size: 14px;
+  padding: 10px 0;
+}
+.app-shell .feedback-redesign.feedback-simplified .practice-next input {
+  accent-color: #2f5d50;
+}
+.app-shell .feedback-redesign.feedback-simplified .feedback-model-footer {
+  color: #52665c;
+  padding: 14px 0 0;
+}
+.app-shell .feedback-redesign.feedback-simplified .feedback-full-analysis .report {
+  border: 0;
+  padding: 12px 0;
+}
+.app-shell .feedback-redesign.feedback-simplified .feedback-strengths h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+@media (max-width: 700px) {
+  .app-shell .expression-disclosure > summary > span {
+    display: block;
+    margin: 4px 0 0;
+  }
+  .app-shell .feedback-redesign.feedback-simplified :is(.feedback-coaching-content, .practice-next) {
+    padding: 18px;
+  }
+  .app-shell .practice-redesign.expression-simplified .practice-start > .button {
+    width: 100%;
+  }
+}
+.app-shell .practice-redesign.expression-simplified .service-note {
+  color: #52665c;
+}

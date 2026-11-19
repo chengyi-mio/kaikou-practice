@@ -8,9 +8,9 @@ test("desktop workspace uses the full window and preserves navigation", async ({
     page.getByRole("navigation", { name: "桌面导航" }),
   ).toBeVisible();
   await expect(
-    page.getByRole("heading", { name: "今天，先把一句话说清楚" }),
+    page.getByRole("heading", { name: "今天，你想练什么？" }),
   ).toBeVisible();
-  await expect(page.locator(".desk-mode")).toHaveCount(3);
+  await expect(page.locator(".home-core-entry")).toHaveCount(2);
   expect(
     await page.locator(".desktop-shell").evaluate((e) => e.clientWidth),
   ).toBeGreaterThan(950);
@@ -18,7 +18,7 @@ test("desktop workspace uses the full window and preserves navigation", async ({
     path: ".reference-analysis/desktop-workspace.png",
     fullPage: true,
   });
-  await page.getByRole("link", { name: "开口训练", exact: true }).click();
+  await page.getByRole("link", { name: "表达训练", exact: true }).click();
   await page.getByRole("button", { name: "场景表达", exact: true }).click();
   await page.getByRole("button", { name: /结构库/ }).click();
   await page.getByRole("button", { name: "PREP 模型", exact: true }).click();
@@ -43,14 +43,14 @@ test("sidebar navigation protects an unsaved practice", async ({ page }) => {
   await page.getByRole("button", { name: "也可以用文字练习" }).click();
   await page.getByLabel("我的表达").fill("这是一段还没有保存的练习内容。");
   page.once("dialog", (dialog) => dialog.dismiss());
-  await page.getByRole("link", { name: "今日练习", exact: true }).click();
+  await page.getByRole("link", { name: "首页", exact: true }).click();
   await expect(page.getByLabel("我的表达")).toHaveValue(
     "这是一段还没有保存的练习内容。",
   );
   page.once("dialog", (dialog) => dialog.accept());
-  await page.getByRole("link", { name: "今日练习", exact: true }).click();
+  await page.getByRole("link", { name: "首页", exact: true }).click();
   await expect(
-    page.getByRole("heading", { name: "今天，先把一句话说清楚" }),
+    page.getByRole("heading", { name: "今天，你想练什么？" }),
   ).toBeVisible();
 });
 test("minimum desktop window and large monitor fit all workspaces", async ({

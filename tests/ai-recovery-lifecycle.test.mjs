@@ -84,6 +84,7 @@ function fixture(saved) {
         if (saveGate) await saveGate.promise;
       },
     },
+    "./interviewTraining": { getInterviewTask: () => undefined },
     "./components": { setNavigationGuard: noop, go: noop },
     "./data": {
       lessons: [],

@@ -19,6 +19,7 @@ for (const width of [390, 1280]) {
     await expect(page.locator('.thinking-card')).not.toContainText('已练');
     await page.locator('.thinking-card a').click();
     await page.getByRole('button', { name: '用这个框架说 60 秒', exact: true }).click();
+    await page.locator('.practice-settings > summary').click();
     await page.getByLabel('表达时长').getByRole('button', { name: '90' }).click();
     await page.locator('.preparation-draft summary').click();
     await page.getByLabel('我的表达提纲').fill('今天聚会前你发了入口照片，我很快就找到了，谢谢你提前准备。');
@@ -46,6 +47,7 @@ for (const limit of [30, 90, 180]) {
   test(`recording respects ${limit}s and never submits preparation as transcript`, async ({ page }) => {
     await page.clock.install();
     await page.goto('/#/practice/logic?thinking=sbi');
+    await page.locator('.practice-settings > summary').click();
     await page.getByLabel('表达时长').getByRole('button', { name: String(limit), exact: false }).click();
     await page.locator('.preparation-draft summary').click();
     await page.getByLabel('我的表达提纲').fill('这是一份准备提纲，不应该被当成说过的话。');

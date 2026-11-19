@@ -40,6 +40,7 @@ export async function analyze(
           ruleProfile: session.ruleProfile,
           thinkingModelId: session.thinkingModelId,
           realTask: session.realTask,
+          interviewContext: session.interviewTraining ? { role: session.interviewTraining.source.role, job: session.interviewTraining.source.job, project: session.interviewTraining.source.project } : undefined,
         }),
         signal: AbortSignal.timeout(100000),
       }),

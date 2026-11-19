@@ -8,6 +8,7 @@ test('Jev real response visualization persists and supports keyboard selection',
     await new Promise<void>((resolve, reject) => { const tx = db.transaction('sessions', 'readwrite'); tx.objectStore('sessions').put({ ...input, feedback, id: 'jev-visual-test', createdAt: new Date().toISOString() }); tx.oncomplete = () => resolve(); tx.onerror = () => reject(tx.error); }); db.close();
   }, live);
   await page.goto('/#/record/jev-visual-test'); await page.reload();
+  await page.locator('.feedback-full-analysis > summary').click();
   await expect(page.getByLabel('Jev 评估可视化')).toBeVisible();
   await expect(page.locator('.jev-card')).toHaveCount(4);
   await page.getByRole('button', { name: /02 · 表达结构/ }).focus();
@@ -17,6 +18,7 @@ test('Jev real response visualization persists and supports keyboard selection',
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.setViewportSize({ width: 1420, height: 1080 });
   await page.reload();
+  await page.locator('.feedback-full-analysis > summary').click();
   await expect(page.locator('.jev-card')).toHaveCount(4);
   await page.getByLabel('Jev 评估可视化').screenshot({ path: '.reference-analysis/jev-visual-preview.png' });
 });

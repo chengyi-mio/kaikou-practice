@@ -27,6 +27,7 @@ test("verified transcript evidence seeks the saved recording and shows timed del
   await page.getByRole("button", { name: "从 2.2 秒处听原话" }).click();
   await expect(page.locator(".feedback-evidence audio")).toBeVisible();
   await expect.poll(() => page.locator(".feedback-evidence audio").evaluate((element) => (element as HTMLAudioElement).currentTime)).toBeGreaterThan(2.1);
+  await page.locator('.feedback-full-analysis > summary').click();
   await expect(page.getByText("识别片段字/分钟")).toBeVisible();
 });
 
@@ -40,6 +41,8 @@ test("history plots only compatible Agnes judgments and exposes source evidence"
   });
   await page.goto("/#/history");
   await page.reload();
+  await page.getByRole('button', {name:'表达训练', exact:true}).click();
+  await page.getByText('表达练习趋势', {exact:true}).click();
   await expect(page.locator(".skill-progress-timeline article")).toHaveCount(2);
   await expect(page.locator(".skill-progress-timeline")).toContainText("未体现");
   await expect(page.locator(".skill-progress-timeline")).toContainText("已做到");

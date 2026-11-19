@@ -6,6 +6,7 @@ import {
   BookOpen,
   House,
   Microphone,
+  UserFocus,
   ClockCounterClockwise,
   ArrowUpRight,
   DownloadSimple,
@@ -76,10 +77,11 @@ export function BottomNav({ active }: { active: string }) {
   return (
     <nav className="bottom-nav" aria-label="主导航">
       {[
-        { path: "/", label: "今日练习", icon: House },
-        { path: "/practice/improv", label: "开口训练", icon: Microphone },
+        { path: "/", label: "首页", icon: House },
+        { path: "/practice/improv", label: "表达训练", icon: Microphone },
+        { path: "/interview", label: "模拟面试", icon: UserFocus },
         { path: "/thinking", label: "方法学习", icon: BookOpen },
-        { path: "/history", label: "我的练习", icon: ClockCounterClockwise },
+        { path: "/history", label: "练习记录", icon: ClockCounterClockwise },
       ].map(({ path, label, icon: Icon }) => (
         <a
           key={path}

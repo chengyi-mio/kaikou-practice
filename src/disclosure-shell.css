@@ -1,0 +1,26 @@
+/* Single-page, focused defaults. Shared navigation and home only. */
+.app-shell .calm-home { max-width: 1200px; margin-inline: auto; }
+.app-shell .home-core-choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+.app-shell .home-core-entry { display: flex; flex-direction: column; align-items: flex-start; padding: 32px; background: #fff; border: 1px solid #dbe3d9; border-radius: 14px; color: #203b34; }
+.app-shell .home-core-entry > svg { color: #2f5d50; margin-bottom: 24px; }
+.app-shell .home-core-entry h2 { font-size: 26px; margin: 0 0 12px; }
+.app-shell .home-core-entry p { margin: 0 0 12px; line-height: 1.7; color: #465c51; }
+.app-shell .home-entry-context { font-size: 13px; color: #52665b; margin-bottom: 32px; line-height: 1.7; }
+.app-shell .home-core-entry .button { margin-top: auto; gap: 20px; }
+.app-shell .home-continue { display: flex; align-items: center; justify-content: space-between; gap: 20px; border-bottom: 1px solid #dbe3d9; padding: 0 0 20px; margin-bottom: 28px; }
+.app-shell .home-continue div { display: grid; gap: 6px; min-width: 0; }
+.app-shell .home-continue small { color: #52665b; }
+.app-shell .home-continue strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.app-shell .home-continue button { flex-shrink: 0; }
+.app-shell .home-quiet-note { margin: 24px 0 0; color: #52665b; font-size: 13px; line-height: 1.7; }
+.sidebar-storage-note { display: flex; align-items: center; gap: 8px; padding: 0 12px; color: #52665b; font-size: 12px; }
+.app-sidebar .sidebar-nav a:nth-child(4) { margin-top: 22px; }
+.app-shell .scene-real-task-link { margin: 0 0 18px; }
+@media (max-width: 640px) {
+  .app-shell .home-core-choices { grid-template-columns: 1fr; gap: 16px; }
+  .app-shell .home-core-entry { padding: 24px; }
+  .app-shell .home-core-entry > svg { margin-bottom: 14px; }
+  .app-shell .home-core-entry h2 { font-size: 23px; }
+  .app-shell .home-entry-context { margin-bottom: 20px; }
+  .app-shell .home-continue { gap: 12px; }
+}

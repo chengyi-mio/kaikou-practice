@@ -1,0 +1,313 @@
+.interview-home {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 32px;
+  align-items: center;
+  padding: 32px;
+  margin: 24px 0;
+  background: #e9f0e8;
+  border-radius: 16px;
+  color: #233f37;
+}
+.interview-home h2 {
+  font-size: clamp(23px, 2.2vw, 32px);
+  line-height: 1.4;
+  margin: 14px 0;
+  max-width: 25ch;
+}
+.interview-home p {
+  max-width: 65ch;
+  margin: 12px 0;
+  color: #405d53;
+}
+.interview-home ol {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 28px;
+  padding-left: 20px;
+  color: #405d53;
+  font-size: 14px;
+}
+.journey-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+.interview-home > .journey-actions {
+  align-items: stretch;
+  flex-direction: column;
+  max-width: 290px;
+}
+.interview-next,
+.interview-return,
+.interview-practice-guide {
+  padding: 24px 0;
+  margin-top: 24px;
+  border-top: 1px solid #d5dfd4;
+  color: #233f37;
+}
+.interview-practice-guide {
+  padding: 24px;
+  margin: 20px 0 28px;
+  background: #e9f0e8;
+  border: 0;
+  border-radius: 12px;
+}
+.interview-return {
+  margin: 24px 0;
+}
+.interview-next h3,
+.interview-return h3,
+.interview-practice-guide h2 {
+  margin: 0 0 12px;
+  font-size: 22px;
+  line-height: 1.45;
+}
+.interview-next p,
+.interview-return p,
+.interview-practice-guide p,
+.interview-training-history p {
+  max-width: 75ch;
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+}
+.interview-next .button {
+  margin-top: 16px;
+}
+.journey-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+  margin: 20px 0;
+}
+.journey-fields label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  color: #233f37;
+  font-weight: 600;
+}
+.journey-fields input,
+.journey-fields textarea,
+.journey-fields select {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  background: #fff;
+  color: #233f37;
+  border: 1px solid #a8bba8;
+  border-radius: 8px;
+  padding: 12px;
+  font: inherit;
+  font-weight: 400;
+}
+.journey-fields select {
+  text-overflow: ellipsis;
+}
+.journey-fields textarea {
+  resize: vertical;
+  line-height: 1.7;
+}
+.journey-fields :is(input, textarea)::placeholder {
+  color: #596d62;
+}
+.journey-fields :is(input, textarea, select):focus-visible,
+.journey-actions button:focus-visible,
+.project-stories summary:focus-visible {
+  outline: 3px solid #507564;
+  outline-offset: 3px;
+}
+.journey-fields :is(input, textarea, select):disabled {
+  color: #596d62;
+  background: #f1f4ee;
+  opacity: 1;
+}
+.journey-focus {
+  padding: 16px;
+  background: #f0f4ed;
+  border-radius: 8px;
+}
+.journey-title {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: baseline;
+}
+.journey-title span,
+.interview-practice-guide small,
+.interview-next small,
+.interview-return small,
+.journey-task small,
+.journey-task span {
+  color: #52685b;
+  font-size: 14px;
+}
+.interview-practice-guide li {
+  margin: 8px 0;
+  line-height: 1.7;
+}
+.interview-practice-guide details,
+.interview-return details {
+  margin: 16px 0;
+}
+.interview-practice-guide summary,
+.interview-return summary,
+.project-stories summary {
+  cursor: pointer;
+  font-weight: 600;
+  line-height: 1.7;
+}
+.interview-practice-guide blockquote {
+  margin: 12px 0;
+  padding: 14px;
+  background: #fff;
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+}
+.journey-comparison {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin: 20px 0;
+}
+.journey-comparison > div {
+  padding: 20px;
+  background: #f1f4ee;
+  border-radius: 8px;
+  min-width: 0;
+}
+.journey-comparison h4 {
+  margin: 0 0 10px;
+}
+.journey-comparison p {
+  white-space: pre-wrap;
+}
+.journey-empty {
+  display: flex;
+  gap: 16px;
+  padding: 24px 0 0;
+  align-items: flex-start;
+}
+.journey-empty svg {
+  flex-shrink: 0;
+}
+.journey-empty p {
+  margin-bottom: 0;
+  color: #52685b;
+}
+.journey-task {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  align-items: center;
+  border-top: 1px solid #d5dfd4;
+  padding: 24px 0;
+}
+.journey-task h3 {
+  margin: 8px 0;
+  font-size: 20px;
+}
+.journey-task .journey-actions {
+  max-width: 370px;
+  flex-shrink: 0;
+}
+.project-stories {
+  margin: 24px 0;
+  padding: 20px 0;
+  border-top: 1px solid #d5dfd4;
+  border-bottom: 1px solid #d5dfd4;
+}
+.project-stories p {
+  color: #405d53;
+  line-height: 1.8;
+  max-width: 75ch;
+}
+.project-list {
+  list-style: none;
+  padding: 0;
+}
+.project-list li {
+  padding: 12px 0;
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  border-bottom: 1px solid #d5dfd4;
+}
+.project-list .text-button {
+  margin-right: 16px;
+}
+.project-selected {
+  padding: 16px;
+  background: #f0f4ed;
+  border-radius: 8px;
+  margin-top: 16px;
+}
+.project-selected p {
+  white-space: pre-wrap;
+}
+.interview-stage {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 20px 0 8px;
+}
+.interview-stage button[aria-pressed="true"] {
+  color: #fff;
+  background: #305d50;
+}
+.interview-route {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+  padding: 0;
+  margin: 24px 0;
+  list-style-position: inside;
+  color: #405d53;
+}
+.interview-route a {
+  color: #305d50;
+  text-underline-offset: 4px;
+}
+.journey-actions button {
+  white-space: normal;
+  text-align: center;
+}
+@media (max-width: 1100px) {
+  .interview-home {
+    grid-template-columns: 1fr;
+  }
+  .interview-home > .journey-actions {
+    max-width: none;
+    flex-direction: row;
+  }
+  .journey-task {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .journey-task .journey-actions {
+    max-width: none;
+  }
+}
+@media (max-width: 650px) {
+  .journey-fields,
+  .journey-comparison {
+    grid-template-columns: 1fr;
+  }
+  .interview-home {
+    padding: 24px 20px;
+    gap: 12px;
+  }
+  .interview-practice-guide {
+    padding: 20px;
+  }
+  .interview-stage .button {
+    flex: 1 1 40%;
+  }
+  .journey-title h2 {
+    font-size: 20px;
+  }
+}

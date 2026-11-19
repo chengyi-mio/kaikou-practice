@@ -7,16 +7,27 @@ import {
   GearSix,
   House,
   Microphone,
+  SidebarSimple,
+  CaretRight,
   UserFocus,
   ShieldCheck,
 } from "@phosphor-icons/react";
 import { Brand, go } from "./components";
-import { completedDays, dateKey } from "./storage";
-import { lessons, modeNames } from "./data";
-import { thinkingModels } from "./thinkingData";
-import { isProgress, reviewState, type Progress } from "./thinkingPath";
+import { interviewRecordPath, readInterviewRecords } from "./interviewRecords";
 import type { Session } from "./types";
 import { version } from "../package.json";
+import "./agent-shell.css";
+
+const sidebarPreferenceKey = "kaikou.ui.sidebarCollapsed.v1";
+function readSidebarPreference() {
+  try { return localStorage.getItem(sidebarPreferenceKey) === "1"; }
+  catch { return false; }
+}
+
+type RecentEntry = { id: string; title: string; path: string; time: string; kind: "expression" | "interview"; pending?: boolean };
+function readSidebarRecords() {
+  return { ...readInterviewRecords(), pending: readPendingInterview() };
+}
 
 export function useDesktop() {
   const [desktop, setDesktop] = useState(
@@ -44,15 +55,16 @@ export function navigationGroup(path: string) {
   return path;
 }
 export const mainNavigation = [
-  { path: "/", label: "今日练习", icon: House },
-  { path: "/practice/improv", label: "开口训练", icon: Microphone },
+  { path: "/", label: "首页", icon: House },
+  { path: "/practice/improv", label: "表达训练", icon: Microphone },
   { path: "/interview", label: "模拟面试", icon: UserFocus },
   { path: "/thinking", label: "方法学习", icon: BookOpen },
-  { path: "/history", label: "我的练习", icon: ClockCounterClockwise },
+  { path: "/history", label: "练习记录", icon: ClockCounterClockwise },
 ];
 export function DesktopShell({
   path,
   children,
+  sessions,
   desktop = true,
 }: {
   path: string;
@@ -61,21 +73,96 @@ export function DesktopShell({
   children: ReactNode;
 }) {
   const selected = navigationGroup(path);
+  const [collapsed, setCollapsed] = useState(readSidebarPreference);
+  const [preferenceNotice, setPreferenceNotice] = useState("");
+  const [sidebarRecords, setSidebarRecords] = useState(readSidebarRecords);
+  const [tooltip, setTooltip] = useState<{ label: string; top: number; left: number } | null>(null);
+  useEffect(() => {
+    const refresh = () => setSidebarRecords(readSidebarRecords());
+    const storage = (event: StorageEvent) => {
+      if (event.key === sidebarPreferenceKey || event.key === null) setCollapsed(readSidebarPreference());
+      refresh();
+    };
+    refresh();
+    window.addEventListener("hashchange", refresh);
+    window.addEventListener("focus", refresh);
+    window.addEventListener("storage", storage);
+    window.addEventListener("kaikou-interview-records-changed", refresh);
+    return () => {
+      window.removeEventListener("hashchange", refresh);
+      window.removeEventListener("focus", refresh);
+      window.removeEventListener("storage", storage);
+      window.removeEventListener("kaikou-interview-records-changed", refresh);
+    };
+  }, [path]);
+  useEffect(() => setTooltip(null), [path, collapsed, desktop]);
+  const recent: RecentEntry[] = [
+    ...sessions.slice(0, 4).map(session => ({
+      id: `expression:${session.id}`, title: session.topic, path: `/record/${encodeURIComponent(session.id)}`,
+      time: session.createdAt, kind: "expression" as const,
+    })),
+    ...sidebarRecords.records.slice(0, 4).map(record => ({
+      id: `${record.kind}:${record.id}`, title: `${record.source?.role || "模拟面试"} · ${record.kind === "live" ? "LIVE 面试" : "逐题面试"}`,
+      path: interviewRecordPath(record), time: record.time, kind: "interview" as const,
+    })),
+  ].sort((a, b) => b.time.localeCompare(a.time));
+  if (sidebarRecords.pending) recent.unshift({
+    id: "pending-interview", title: sidebarRecords.pending.title, path: sidebarRecords.pending.path,
+    time: "", kind: "interview", pending: true,
+  });
+  const pageTitle = selected === "/settings" ? "设置与说明" : mainNavigation.find(item => item.path === selected)?.label || "我的练习";
+  function toggleSidebar() {
+    const next = !collapsed;
+    setCollapsed(next);
+    setPreferenceNotice("");
+    try { localStorage.setItem(sidebarPreferenceKey, next ? "1" : "0"); }
+    catch { setPreferenceNotice("侧栏偏好暂未保存，本次仍可使用。"); }
+  }
+  function tooltipProps(label: string) {
+    const show = (event: { currentTarget: HTMLElement }) => {
+      if (!collapsed || !desktop) return;
+      const rect = event.currentTarget.getBoundingClientRect();
+      setTooltip({ label, top: Math.max(8, rect.top + rect.height / 2 - 18), left: rect.right + 12 });
+    };
+    return {
+      onMouseEnter: show,
+      onFocus: show,
+      onMouseLeave: () => setTooltip(null),
+      onBlur: () => setTooltip(null),
+      onKeyDown: (event: { key: string }) => { if (event.key === "Escape") setTooltip(null); },
+      "aria-describedby": collapsed && tooltip?.label === label ? "agent-sidebar-tooltip" : undefined,
+    };
+  }
   return (
-    <div className="desktop-frame">
+    <div className="desktop-frame agent-frame" data-sidebar-collapsed={collapsed}>
       <aside className="app-sidebar" hidden={!desktop}>
-        <a
-          className="sidebar-brand"
-          href="#/"
-          onClick={(e) => {
-            e.preventDefault();
-            go("/");
-          }}
-          aria-label="开口首页"
-        >
-          <Brand />
-        </a>
-        <nav className="sidebar-nav" aria-label="桌面导航">
+        <div className="agent-sidebar-heading">
+          <a
+            className="sidebar-brand"
+            href="#/"
+            onClick={(e) => {
+              e.preventDefault();
+              go("/");
+            }}
+            aria-label="开口首页"
+            {...tooltipProps("开口首页")}
+          >
+            <Brand />
+          </a>
+          <button
+            className="agent-sidebar-toggle"
+            type="button"
+            onClick={toggleSidebar}
+            aria-label={collapsed ? "展开侧栏" : "收起侧栏"}
+            title={collapsed ? "展开侧栏" : "收起侧栏"}
+            aria-expanded={!collapsed}
+            aria-controls="agent-sidebar-navigation"
+            {...tooltipProps(collapsed ? "展开侧栏" : "收起侧栏")}
+          >
+            <SidebarSimple size={20} weight="regular" aria-hidden="true" />
+          </button>
+        </div>
+        <nav id="agent-sidebar-navigation" className="sidebar-nav" aria-label="桌面导航">
           {mainNavigation.map(({ path: to, label, icon: Icon }) => (
             <a
               key={to}
@@ -86,18 +173,28 @@ export function DesktopShell({
               }}
               className={selected === to ? "selected" : ""}
               aria-current={selected === to ? "page" : undefined}
+              aria-label={label}
+              title={label}
+              {...tooltipProps(label)}
             >
-              <Icon size={21} weight="regular" />
+              <Icon size={21} weight="regular" aria-hidden="true" />
               <span>{label}</span>
             </a>
           ))}
         </nav>
+        <section className="agent-recent" aria-label="最近练习" hidden={collapsed}>
+          <h2>最近练习</h2>
+          {recent.slice(0, 4).map(entry => <a key={entry.id} href={`#${entry.path}`} title={entry.title}
+            className={(window.location.hash.slice(1) || "/") === entry.path ? "selected" : ""}
+            onClick={event => { event.preventDefault(); go(entry.path); }}>
+            <ClockCounterClockwise size={16} aria-hidden="true" />
+            <span><strong>{entry.title}</strong><small>{entry.pending ? "继续上次" : entry.kind === "expression" ? "表达练习" : "面试记录"}</small></span>
+          </a>)}
+          {sidebarRecords.error && <p className="agent-recent-error" role="status">{sidebarRecords.error}<a href="#/history" onClick={event => { event.preventDefault(); go("/history"); }}>查看练习记录</a></p>}
+          {!recent.length && !sidebarRecords.error && <p className="agent-recent-empty">保存练习后，可从这里快速回看。</p>}
+        </section>
         <div className="sidebar-bottom">
-          <div className="sidebar-local-note">
-            <strong>每一次开口，都算数</strong>
-            <p>练习与笔记保存在本机</p>
-            <ShieldCheck size={19} />
-          </div>
+          <p className="sidebar-storage-note" aria-label="练习保存在本机" title="练习保存在本机"><ShieldCheck size={17} aria-hidden="true" /><span>练习保存在本机</span></p>
           <a
             href="#/settings"
             className={`sidebar-settings ${selected === "/settings" ? "selected" : ""}`}
@@ -105,8 +202,11 @@ export function DesktopShell({
               e.preventDefault();
               go("/settings");
             }}
+            aria-label="设置与服务状态"
+            title="设置与服务状态"
+            {...tooltipProps("设置与服务状态")}
           >
-            <GearSix size={19} />
+            <GearSix size={19} aria-hidden="true" />
             <span>设置与服务状态</span>
           </a>
           <small className="sidebar-version">
@@ -114,252 +214,70 @@ export function DesktopShell({
           </small>
         </div>
       </aside>
-      <div className="desktop-workspace">{children}</div>
+      <div id="agent-sidebar-tooltip" className="agent-sidebar-tooltip" role="tooltip" hidden={!desktop || !collapsed || !tooltip} style={{ top: tooltip?.top, left: tooltip?.left }}>{tooltip?.label}</div>
+      <div className="desktop-workspace">
+        <div className="agent-workspace-bar" hidden={!desktop}>
+          <nav aria-label="当前位置">
+            <a href="#/" onClick={event => { event.preventDefault(); go("/"); }}>我的练习空间</a>
+            <CaretRight size={14} aria-hidden="true" />
+            <span aria-current="page">{pageTitle}</span>
+          </nav>
+          {preferenceNotice && <p role="status">{preferenceNotice}</p>}
+        </div>
+        {children}
+      </div>
     </div>
   );
 }
-function readReviewSummary() {
+function readPendingInterview() {
   try {
-    const raw = localStorage.getItem("kaikou.thinking.v1");
-    if (!raw) return { due: [], error: "" };
-    const notebook = JSON.parse(raw);
-    const progress = notebook.progress || {};
-    if (
-      !progress ||
-      typeof progress !== "object" ||
-      Array.isArray(progress) ||
-      !Object.values(progress).every(isProgress)
-    )
-      throw new Error("invalid");
-    return {
-      due: thinkingModels.filter(
-        (model) => reviewState(progress[model.id] as Progress).state === "due",
-      ),
-      error: "",
-    };
-  } catch {
-    return {
-      due: [],
-      error: "学习记录暂时无法读取，请到方法学习检查本机保存状态。",
-    };
-  }
+    const live = localStorage.getItem("kaikou.interview.mode") === "live";
+    const raw = localStorage.getItem(live ? "kaikou.live-interview.draft.v1" : "kaikou.interview.draft.v1");
+    if (!raw) return null;
+    const draft = JSON.parse(raw);
+    const hasContent = live
+      ? Array.isArray(draft.messages) && draft.messages.length > 0
+      : Boolean(draft.question || draft.answer || draft.turns?.length);
+    if (!hasContent || draft.report) return null;
+    return { title: `${(live ? draft.source?.role : draft.role) || "模拟面试"} · ${live ? "LIVE 通话" : "逐题练习"}`, path: "/interview" };
+  } catch { return null; }
 }
-export function DesktopHome({
-  sessions,
-  error = "",
-}: {
-  sessions: Session[];
-  error?: string;
-}) {
-  const completed = completedDays(sessions);
-  const next =
-    lessons.find((lesson) => !completed.has(lesson.day)) || lessons[20];
-  const recent = sessions[0];
-  const review = readReviewSummary();
-  const todayCount = sessions.filter(
-    (s) => dateKey(new Date(s.createdAt)) === dateKey(),
-  ).length;
+export function DesktopHome({ sessions, error = "" }: { sessions: Session[]; error?: string }) {
+  const pendingSession = sessions.find((session) => !session.feedback);
+  const pending = readPendingInterview() || (pendingSession
+    ? { title: pendingSession.topic, path: `/record/${encodeURIComponent(pendingSession.id)}` }
+    : null);
   return (
-    <main className="desktop-home today-home">
+    <main className="desktop-home today-home calm-home">
       <div className="desk-page-heading">
         <div>
-          <h1>今天，先把一句话说清楚</h1>
-          <p>
-            {new Date().toLocaleDateString("zh-CN", {
-              month: "long",
-              day: "numeric",
-              weekday: "long",
-            })}{" "}
-            / 用一小步，保持表达的手感
-          </p>
+          <h1>今天，你想练什么？</h1>
+          <p>练清楚日常表达，也为下一场面试做好准备。</p>
         </div>
-        <a
-          href="#/settings"
-          className="mobile-settings"
-          aria-label="设置与服务状态"
-          onClick={(e) => {
-            e.preventDefault();
-            go("/settings");
-          }}
-        >
-          <GearSix size={23} />
-        </a>
+        <a href="#/settings" className="mobile-settings" aria-label="设置与服务状态" onClick={(e) => { e.preventDefault(); go("/settings"); }}><GearSix size={23} /></a>
       </div>
-      {error && (
-        <p className="error-note" role="alert">
-          {error}
-        </p>
-      )}
-      <section className="real-task-home" aria-label="真实任务练习">
-        <div>
-          <span>带着真实任务练</span>
-          <h2>你最近需要说清楚什么？</h2>
-          <p>工作汇报、解释延期、提出需求或面试回答。写下对象和目的，再用自己的话练一遍。</p>
-        </div>
-        <button className="button primary" onClick={() => go("/practice/logic?real=1")}>
-          准备一次真实沟通 <ArrowRight size={18} />
-        </button>
+      {error && <p className="error-note" role="alert">{error}</p>}
+      {pending && <section className="home-continue" aria-label="继续上次练习">
+        <div><small>继续上次</small><strong>{pending.title}</strong></div>
+        <button className="text-button" onClick={() => go(pending.path)}>继续练习 <ArrowRight size={18} /></button>
+      </section>}
+      <section className="home-core-choices" aria-label="选择练习方向">
+        <article className="home-core-entry">
+          <Microphone size={34} weight="regular" aria-hidden="true" />
+          <h2>表达训练</h2>
+          <p>把想法说清楚，把重点讲明白。</p>
+          <span className="home-entry-context">即兴表达 · 场景沟通 · 复述练习</span>
+          <button className="button primary" onClick={() => go("/practice/improv")}>开始表达训练 <ArrowRight size={18} /></button>
+        </article>
+        <article className="home-core-entry">
+          <UserFocus size={34} weight="regular" aria-hidden="true" />
+          <h2>模拟面试</h2>
+          <p>带上真实经历，练出岗位需要的回答。</p>
+          <span className="home-entry-context">简历与 JD · 逐题练习 · LIVE 通话</span>
+          <button className="button primary" onClick={() => go("/interview")}>进入模拟面试 <ArrowRight size={18} /></button>
+        </article>
       </section>
-      <section className="today-hero">
-        <div>
-          <span className="hero-kicker">
-            今日练习 · 21 天计划 / 第 {next.day} 天
-          </span>
-          <h2>{next.title}</h2>
-          <p>{next.goal}</p>
-          <div className="today-hero-action">
-            <button
-              className="button primary"
-              onClick={() => go(`/lesson/${next.day}`)}
-            >
-              开始今日练习 <ArrowRight size={18} />
-            </button>
-            <span>
-              已完成 {completed.size} / 21 天 · 今日保存 {todayCount} 次
-            </span>
-          </div>
-        </div>
-        <aside>
-          <span>这一次，只练一件事</span>
-          <p>{next.task}</p>
-          <small>了解任务 → 开口表达 → 回看一次</small>
-        </aside>
-      </section>
-      <div className="today-followups">
-        <section className="today-resume">
-          <div className="section-title">
-            <h2>接着上次练</h2>
-            <button className="text-button" onClick={() => go("/history")}>
-              查看全部 <ArrowRight size={15} />
-            </button>
-          </div>
-          {recent ? (
-            <>
-              <span className="tag">
-                {recent.feedback ? "已保存" : "待继续 · 内容已保存"}
-              </span>
-              <h3>{recent.topic}</h3>
-              <p>
-                {recent.practiceFocus ||
-                  recent.feedback?.improvements[0] ||
-                  "打开记录，回看表达内容与录音，再继续下一步。"}
-              </p>
-              <div className="today-resume-actions">
-                <button
-                  className="button secondary"
-                  onClick={() =>
-                    go(
-                      recent.feedback
-                        ? `/practice/${recent.mode}?retry=${encodeURIComponent(recent.id)}&focus=0`
-                        : `/record/${encodeURIComponent(recent.id)}`,
-                    )
-                  }
-                >
-                  {recent.feedback ? "同题再练一次" : "继续获取反馈"}
-                </button>
-                <small>
-                  {new Date(recent.createdAt).toLocaleString("zh-CN", {
-                    month: "numeric",
-                    day: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}{" "}
-                  · {modeNames[recent.mode]}
-                </small>
-              </div>
-            </>
-          ) : (
-            <>
-              <h3>{error ? "暂时无法读取练习记录" : "第一条记录，等你开口"}</h3>
-              <p>
-                {error
-                  ? "已有记录不会被覆盖；请检查浏览器存储权限后重新打开。"
-                  : "完成一次练习并保存，就能在这里接着练。表达不必完美，先说出第一句。"}
-              </p>
-              <button
-                className="button secondary"
-                onClick={() => go("/practice/improv")}
-              >
-                开始一次练习 <ArrowRight size={16} />
-              </button>
-            </>
-          )}
-        </section>
-        <section className="today-review">
-          <h2>让学过的方法，再用一次</h2>
-          {review.error ? (
-            <p role="alert">{review.error}</p>
-          ) : (
-            <>
-              <p>
-                {review.due.length
-                  ? `今天有 ${review.due.length} 个框架可复习`
-                  : "按自己的节奏学，也给回想留一点时间。"}
-              </p>
-              {review.due.slice(0, 2).map((model) => (
-                <button
-                  className="review-summary-row"
-                  key={model.id}
-                  onClick={() => go(`/thinking?model=${model.id}`)}
-                >
-                  <span>{model.name}</span>
-                  <span>
-                    待复习 <ArrowRight size={15} />
-                  </span>
-                </button>
-              ))}
-            </>
-          )}
-          <button
-            className="text-button"
-            onClick={() =>
-              go(
-                review.due[0]
-                  ? `/thinking?model=${review.due[0].id}`
-                  : "/thinking",
-              )
-            }
-          >
-            {review.due.length ? "去复习" : "去学一个方法"}{" "}
-            <ArrowRight size={16} />
-          </button>
-          <small>学完 3 天后首次复习，再隔 7 天回想一次</small>
-        </section>
-      </div>
-      <section className="today-modes">
-        <h2>按你今天的需要，开始</h2>
-        <div className="desk-mode-grid">
-          {[
-            {
-              title: "即兴表达",
-              description: "抽一个话题，把想法说出来",
-              path: "/practice/improv",
-            },
-            {
-              title: "场景表达",
-              description: "汇报、反馈、说服，带着目的练",
-              path: "/logic",
-            },
-            {
-              title: "复述练习",
-              description: "读一段材料，用自己的话讲清楚",
-              path: "/library",
-            },
-          ].map((item, index) => (
-            <button
-              className="desk-mode"
-              key={item.path}
-              onClick={() => go(item.path)}
-            >
-              <small>{String(index + 1).padStart(2, "0")}</small>
-              <h3>
-                {item.title} <ArrowRight size={21} />
-              </h3>
-              <p>{item.description}</p>
-            </button>
-          ))}
-        </div>
-      </section>
+      <p className="home-quiet-note">想先学方法？在“方法学习”中查看表达框架与 21 天练习计划。</p>
     </main>
   );
 }

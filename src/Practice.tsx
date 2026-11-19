@@ -1,6 +1,7 @@
 import { AIRecovery } from "./AIRecovery";
 import { FeedbackReview, AnalysisProgress } from "./PracticeLoop";
 import "./practice-redesign.css";
+import "./expression-disclosure.css";
 import { RuleSelector } from "./RuleSelector";
 import type { RuleProfile } from "./types";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
@@ -35,6 +36,8 @@ import {
   wordGroups,
 } from "./data";
 import { saveSession } from "./storage";
+import { getInterviewTask, trainingContext } from './interviewTraining';
+import { InterviewPracticeGuide } from './InterviewJourney';
 import { scenarios } from "./scenarios";
 import type { Feedback, Mode, ServiceStatus, Session, TranscriptSegment, TranscriptWord } from "./types";
 import { speechSupported, useRecorder } from "./useRecorder";
@@ -61,15 +64,18 @@ export function Practice({
   status: ServiceStatus;
   onSaved: () => Promise<void>;
 }) {
-  const practiceFocus =
+  const interviewTaskId = retrySession?.interviewTaskId || followupSession?.interviewTaskId || search.get('interviewTask');
+  const interviewTask = retrySession?.interviewTraining || followupSession?.interviewTraining || getInterviewTask(interviewTaskId);
+  const isInterviewRetest = search.get('retest') === '1';
+  const practiceFocus = interviewTask?.advice ||
     retrySession?.feedback?.improvements[Number(search.get("focus")) || 0];
   const lesson = lessons.find((l) => l.day === Number(search.get("lesson")));
   const scene =
     mode === "logic"
       ? scenarios.find((s) => s.id === search.get("scene"))
       : undefined;
-  const realTaskMode = mode === "logic" && (search.get("real") === "1" || Boolean(retrySession?.realTask || followupSession?.realTask));
-  const [realTask, setRealTask] = useState<RealTask>(() => retrySession?.realTask || followupSession?.realTask || {
+  const realTaskMode = mode === "logic" && (Boolean(interviewTask) || search.get("real") === "1" || Boolean(retrySession?.realTask || followupSession?.realTask));
+  const [realTask, setRealTask] = useState<RealTask>(() => (interviewTask ? trainingContext(interviewTask) : undefined) || retrySession?.realTask || followupSession?.realTask || {
     kind: "report",
     audience: "主管",
     goal: realTaskTemplates.report.goal,
@@ -88,7 +94,7 @@ export function Practice({
     frameworks.find(
       (f) =>
         (retrySession?.framework || followupSession?.framework)?.startsWith(f.name) ||
-        f.id === search.get("framework") || (realTaskMode && f.id === realTaskTemplates[realTask.kind].framework),
+        f.id === (search.get("framework") || (realTaskMode ? realTaskTemplates[realTask.kind].framework : undefined)),
     ) || frameworks[1];
   const framework = thinking
     ? {
@@ -111,7 +117,7 @@ export function Practice({
     "setup",
   );
   const [topic, setTopic] = useState(
-    retrySession?.topic || search.get("question") ||
+    interviewTask?.question || retrySession?.topic || search.get("question") ||
       (thinking
         ? thinkingPractice[thinking.id].task
         : lesson?.task || (scene ? scene.prompts[0] : pick(topics))),
@@ -122,7 +128,7 @@ export function Practice({
   const [words, setWords] = useState(["蜡烛", "机会"]);
   const [prepTime, setPrepTime] = useState(3);
   const [targetDuration, setTargetDuration] = useState(
-    retrySession?.targetDuration || 60,
+    retrySession?.targetDuration || (interviewTask ? 90 : 60),
   );
   const [draft, setDraft] = useState("");
   const [countdown, setCountdown] = useState<number | null>(null);
@@ -130,7 +136,7 @@ export function Practice({
     !status.asr && speechSupported(),
   );
   const [ruleProfile, setRuleProfile] = useState<RuleProfile>(
-    retrySession?.ruleProfile || followupSession?.ruleProfile || (realTaskMode ? realTaskTemplates[realTask.kind].profile : "auto"),
+    retrySession?.ruleProfile || followupSession?.ruleProfile || (realTaskMode ? realTaskTemplates[realTask.kind].profile : search.get('profile') === 'interview' ? 'interview' : "auto"),
   );
   const [text, setText] = useState("");
   const [transcriptSegments, setTranscriptSegments] = useState<TranscriptSegment[]>();
@@ -152,7 +158,7 @@ export function Practice({
   const active = useRef(true);
   const operationPending = useRef(false);
   const question =
-    retrySession?.topic || search.get("question") ||
+    interviewTask?.question || retrySession?.topic || search.get("question") ||
     (realTaskMode
       ? realTaskQuestion(realTask)
       : mode === "retell"
@@ -275,6 +281,9 @@ export function Practice({
   }
   function session(report?: Feedback): Session {
     return {
+      interviewTaskId: interviewTask?.id,
+      interviewTraining: interviewTask,
+      interviewAttempt: interviewTask ? (isInterviewRetest ? 'retest' : 'drill') : undefined,
       realTask: realTaskMode ? realTask : undefined,
       id: sessionId,
       followupOf: followupSession?.id,
@@ -443,7 +452,7 @@ export function Practice({
           ? "先确认，这是你想说的话"
           : "把这一次，变成下一次的进步";
   return (
-    <div className={`practice-redesign practice-screen-${view}`}>
+    <div className={`practice-redesign expression-simplified practice-screen-${view}`}>
       <Header
         title={view === "report" ? "练习反馈" : modeNames[mode]}
         onBack={back}
@@ -518,7 +527,9 @@ export function Practice({
             );
           })}
         </div>
-        {retrySession && view !== "report" && (
+        {interviewTask && view !== 'report' && <InterviewPracticeGuide task={interviewTask} retest={isInterviewRetest} />}
+        {interviewTaskId && !interviewTask && <p role="alert">面试补练任务暂时不可读取，请返回面试工作台检查；当前按普通表达练习保存。</p>}
+        {retrySession && !isInterviewRetest && view !== "report" && (
           <section className="practice-focus">
             <h3>同一道题，再试一次</h3>
             <p>{practiceFocus || "保留已有优点，把想法说得更清楚。"}</p>
@@ -536,7 +547,7 @@ export function Practice({
         )}
         {view === "setup" && (
           <>
-            {realTaskMode && !retrySession && !followupSession && (
+            {realTaskMode && !interviewTask && !retrySession && !followupSession && (
               <section className="real-task-panel" aria-label="准备真实沟通任务">
                 <div className="real-task-heading">
                   <div><span className="eyebrow">真实任务练习</span><h2>你最近需要说清楚什么？</h2></div>
@@ -648,14 +659,14 @@ export function Practice({
                       <p>{material.text}</p>
                     ) : (
                       <p className="topic-instruction">
-                        {mode === "logic"
+                        {isInterviewRetest ? '独立回答这道原题，保存后再对照上一版。' : mode === "logic"
                           ? framework.description
                           : "没有标准答案。说出你的观点，再用一个真实的例子让人听懂。"}
                       </p>
                     )}
                   </article>
                 )}
-                <section className="practice-structure">
+                {!isInterviewRetest && <section className="practice-structure">
                   <h3>
                     {mode === "retell"
                       ? "读懂之后，可以这样复述"
@@ -669,7 +680,7 @@ export function Practice({
                       </span>
                     ))}
                   </div>
-                </section>
+                </section>}
                 <div className="preparation-draft">
                   <details>
                     <summary>先写提纲，再开口（可选）</summary>
@@ -679,7 +690,6 @@ export function Practice({
                     {thinking && (
                       <p>{thinkingPractice[thinking.id].template.join("\n")}</p>
                     )}
-                  </details>
                   <label htmlFor="preparation-draft">我的表达提纲</label>
                   <textarea
                     id="preparation-draft"
@@ -698,10 +708,11 @@ export function Practice({
                       用这份提纲进行文字练习
                     </button>
                   )}
+                  </details>
                 </div>
               </section>
               <aside className="practice-setup-panel" aria-label="这一轮怎么练">
-                <h2>这一轮怎么练</h2>
+                <h2>开始这一轮</h2>
                 <div
                   className="practice-input-switch"
                   role="group"
@@ -725,6 +736,8 @@ export function Practice({
                     文字输入
                   </button>
                 </div>
+                <details className="expression-disclosure practice-settings">
+                  <summary>练习设置 <span>{targetDuration} 秒表达 · {prepTime} 秒准备</span></summary>
                 <section className="prep-section duration-section">
                   <h3>表达时长</h3>
                   <div className="prep-options" aria-label="表达时长">
@@ -780,6 +793,12 @@ export function Practice({
                     </span>
                   </label>
                 )}
+                </details>
+                {!status.asr && speechSupported() && browserSpeech && (
+                  <p className="service-note browser-transcription-notice">
+                    已开启浏览器转写，语音可能发送至浏览器厂商的在线服务；可在练习设置中关闭。
+                  </p>
+                )}
                 {status.asr && (
                   <p className="service-note">
                     {status.asrMode === "local"
@@ -791,7 +810,7 @@ export function Practice({
                   <p className="service-note service-availability">
                     <Sparkle size={16} />
                     {status.reachable
-                      ? "AI 点评尚未启用，本次提供基础反馈。"
+                      ? "AI 点评尚未配置，可在点评时设置服务。"
                       : "暂时无法连接服务，仍可录音并保存在本机。"}
                   </p>
                 )}
@@ -816,7 +835,7 @@ export function Practice({
               </aside>
             </div>
             <footer className="practice-setup-footer">
-              {mode !== "retell" && !lesson && !thinking && !retrySession && (
+              {mode !== "retell" && !interviewTask && !lesson && !thinking && !retrySession && (
                 <button
                   className="text-button"
                   onClick={() =>
@@ -831,7 +850,7 @@ export function Practice({
                 </button>
               )}
               <span>
-                {practiceFocus
+              {isInterviewRetest ? '独立回答，保存后再回看上次建议。' : practiceFocus
                   ? `本轮目标：${practiceFocus}`
                   : "每一次开口，都算数"}
               </span>
@@ -853,7 +872,7 @@ export function Practice({
               </span>
               <h2>{question}</h2>
               <p>
-                {practiceFocus
+                {isInterviewRetest ? '先独立回答，结束后再看反馈。' : practiceFocus
                   ? `本轮目标：${practiceFocus}`
                   : structureSteps.join(" → ")}
               </p>
@@ -1009,7 +1028,7 @@ export function Practice({
                   <p>{material.text}</p>
                 </details>
               )}
-              {mode === "logic" && (
+              {mode === "logic" && !isInterviewRetest && (
                 <details className="reference-details">
                   <summary>回顾 {framework.id} 结构</summary>
                   <p>{framework.steps.join(" → ")}</p>
@@ -1030,17 +1049,17 @@ export function Practice({
                   setSaved(false);
                 }}
                 disabled={
-                  Boolean(working) || mode === "retell" || Boolean(retrySession)
+                  Boolean(working) || mode === "retell" || Boolean(retrySession) || Boolean(interviewTask)
                 }
               />
-              {realTaskMode && (
+              {realTaskMode && !isInterviewRetest && (
                 <div className="real-task-review">
                   <strong>本次真实任务</strong>
                   <p>听众：{realTask.audience || "未指定"} · 目标：{realTask.goal}</p>
                   {realTask.context && <p>背景：{realTask.context}</p>}
                   <p>检查重点：{realTask.criteria}</p>
                   <small>Agnes 与兼容聊天模型会参考这份检查重点；Jev 使用固定场景规则。</small>
-                  {!retrySession && !followupSession && <button className="text-button" disabled={Boolean(working)} onClick={() => setView("setup")}>修改任务背景</button>}
+                  {!interviewTask && !retrySession && !followupSession && <button className="text-button" disabled={Boolean(working)} onClick={() => setView("setup")}>修改任务背景</button>}
                 </div>
               )}
               {working && <AnalysisProgress message={working} />}
@@ -1144,7 +1163,7 @@ export function Practice({
             />
             <div className="report-actions">
               <button
-                className="button primary"
+                className={saved ? "button secondary" : "button primary"}
                 disabled={Boolean(working)}
                 onClick={() => (saved ? go("/history") : void saveOnly())}
               >

@@ -7,6 +7,8 @@ import { findPauses, type Pause } from "./audioInsights";
 import { deliveryMetrics, timeForEvidence } from "./deliveryMetrics";
 import { speakQuestion } from "./voicePrompt";
 import type { Session } from "./types";
+import { InterviewReturn } from './InterviewJourney';
+import "./expression-disclosure.css";
 
 export function PracticeNext({
   session,
@@ -24,10 +26,12 @@ export function PracticeNext({
   if (!session.feedback) return null;
   return (
     <section className="practice-next" aria-label="下一次怎么练">
-      <span className="next-eyebrow">把反馈变成下一次表达</span>
       <h3>这次先改一个地方</h3>
-      <p>不用重写全部内容。选一个重点，用同一道题再说一次。</p>
-      {tasks.length ? (
+      <p>用同一道题再说一次，练完后对照两次表达。</p>
+      {selectedFocus > 0 && <p>本次选择：{tasks[selectedFocus]}</p>}
+      {tasks.length > 1 && (
+        <details className="expression-disclosure next-options">
+        <summary>更换练习重点</summary>
         <fieldset>
           <legend>下一次的练习重点</legend>
           {tasks.map((task, i) => (
@@ -42,22 +46,21 @@ export function PracticeNext({
             </label>
           ))}
         </fieldset>
-      ) : (
-        <p>保留已有优点，尝试把同一个意思说得更清楚。</p>
+        </details>
       )}
       {session.feedback.rewrite && (
-        <div className="next-example">
-          <span>
+        <details className="next-example expression-disclosure">
+          <summary>
             参考表达 ·{" "}
             {session.feedback.rewrite.length > 180 ? "节选" : "仅供参考"}
-          </span>
+          </summary>
           <blockquote>
             {session.feedback.rewrite.length > 180
               ? `${session.feedback.rewrite.slice(0, 180)}…`
               : session.feedback.rewrite}
           </blockquote>
           <small>示例是提示，不必逐字照读；事实需自己确认</small>
-        </div>
+        </details>
       )}
       <button
         className="button primary"
@@ -73,10 +76,9 @@ export function PracticeNext({
       <small className="next-duration">
         同题再练 {session.targetDuration || 60} 秒 · 两次练习分别保存
       </small>
-      <small>保留话题、结构与本轮改进重点，练完后对照两次表达</small>
       {session.feedback.source === "ai" && Boolean(session.transcript) && (
-        <div className="followup-card">
-          <h4>{session.followupOf ? "继续模拟对话" : "开始模拟对话"} · 下一轮</h4>
+        <details className="followup-card expression-disclosure">
+          <summary>{session.followupOf ? "继续模拟对话" : "开始模拟对话"} · 下一轮</summary>
           <p>让 AI 扮演听众，结合之前的回答继续追问。可以朗读问题并录音作答，每一轮分别保存。</p>
           {!followup ? (
             <button className="button secondary" disabled={disabled || followupBusy} onClick={async () => {
@@ -90,7 +92,7 @@ export function PracticeNext({
             <><blockquote>{followup}</blockquote><button className="text-button" onClick={() => speakQuestion(followup)}>朗读问题</button><button className="button secondary" disabled={disabled} onClick={() => go(`/practice/${session.mode === "logic" ? "logic" : "improv"}?followup=${encodeURIComponent(session.id)}&question=${encodeURIComponent(followup)}`)}>录音回答这个问题 <ArrowRight size={16} /></button></>
           )}
           {followupError && <p role="alert">{followupError}</p>}
-        </div>
+        </details>
       )}
       {disabled && (
         <p className="next-disabled">
@@ -113,7 +115,7 @@ export function FeedbackReview({
   onViewTranscript?: () => void;
 }) {
   const id = useId();
-  const [section, setSection] = useState("feedback");
+  const [analysisOpen, setAnalysisOpen] = useState(false);
   const [seekTo, setSeekTo] = useState<{ time: number; nonce: number }>();
   const feedback = session.feedback;
   if (!feedback) return null;
@@ -133,7 +135,7 @@ export function FeedbackReview({
       ...feedback.dimensions.flatMap((d) => d.evidence || []),
       ...(feedback.checks?.map((c) => c.evidence).filter(Boolean) || []),
     ]),
-  ].slice(0, 2);
+  ].slice(0, 1);
   const strengths = feedback.dimensions
     .filter((d) => d.status === "good")
     .map((d) => d.text);
@@ -142,7 +144,6 @@ export function FeedbackReview({
     [];
   const keep = [...strengths, ...clearChecks].filter(Boolean).slice(0, 2);
   function showSection(name: string) {
-    setSection(name);
     if (name === "transcript" && onViewTranscript) {
       onViewTranscript();
       return;
@@ -157,30 +158,7 @@ export function FeedbackReview({
     });
   }
   return (
-    <div className="feedback-redesign">
-      <nav className="feedback-tabs" aria-label="反馈内容导航">
-        <button
-          className={section === "feedback" ? "is-active" : ""}
-          aria-current={section === "feedback" ? "location" : undefined}
-          onClick={() => showSection("feedback")}
-        >
-          练习反馈
-        </button>
-        <button
-          className={section === "transcript" ? "is-active" : ""}
-          aria-current={section === "transcript" ? "location" : undefined}
-          onClick={() => showSection("transcript")}
-        >
-          原文与录音
-        </button>
-        <button
-          className={section === "comparison" ? "is-active" : ""}
-          aria-current={section === "comparison" ? "location" : undefined}
-          onClick={() => showSection("comparison")}
-        >
-          同题对比
-        </button>
-      </nav>
+    <div className="feedback-redesign feedback-simplified">
       <div className="feedback-coaching-grid" id={`${id}-feedback`}>
         <div className="feedback-coaching-content">
           <section className="feedback-priority">
@@ -188,8 +166,8 @@ export function FeedbackReview({
               {priority ? "本轮只改这一点" : "回顾这一次表达"}
             </span>
             <h2>{priority || feedback.summary}</h2>
-            {priority && <p>{feedback.summary}</p>}
-            {(target?.text || dimension?.text) && (
+            {priority && feedback.summary !== priority && <p>{feedback.summary}</p>}
+            {!feedback.summary && (target?.text || dimension?.text) && (
               <p className="feedback-grounding">
                 {target?.text || dimension?.text}
               </p>
@@ -215,51 +193,37 @@ export function FeedbackReview({
               查看我的完整表达 <ArrowUpRight size={15} />
             </button>
           </section>
-          {keep.length > 0 && (
-            <section className="feedback-strengths">
-              <h3>
-                <CheckCircle size={19} />
-                值得保留
-              </h3>
-              {keep.map((text, i) => (
-                <p key={i}>{text}</p>
-              ))}
-            </section>
-          )}
         </div>
-        <PracticeNext session={session} disabled={disabled} />
+        {session.interviewTaskId ? <InterviewReturn session={session} disabled={disabled} /> : <PracticeNext session={session} disabled={disabled} />}
       </div>
       <footer className="feedback-model-footer">
         <span className="feedback-chip">
-          {feedback.provider === "agnes"
-            ? "Agnes · 支持式反馈"
+          {feedback.source !== "ai"
+            ? "基础反馈 · 非 AI 点评"
+            : feedback.provider === "agnes"
+            ? "AI 点评 · Agnes"
             : feedback.provider === "jev"
-              ? "Jev · 场景规则判断"
+              ? "AI 点评 · Jev"
               : feedback.source === "ai"
                 ? "AI 表达反馈"
-                : "基础自查"}
+                : "基础反馈 · 非 AI 点评"}
         </span>
-        <button className="text-button" onClick={() => go("/settings")}>
-          {window.desktopApp ? "切换 Agnes / Jev" : "查看服务配置说明"}{" "}
-          <ArrowRight size={15} />
-        </button>
         <span>
           {feedback.profileName
             ? `依据：${feedback.profileName}`
             : "根据本次表达文字生成"}
         </span>
-        <button className="text-button" onClick={() => showSection("analysis")}>
-          查看详细分析 ＋
-        </button>
       </footer>
-      <section id={`${id}-analysis`} className="feedback-full-analysis">
-        <AudioObservations session={session} />
-        <Report feedback={feedback} />
-      </section>
+      <details id={`${id}-analysis`} className="feedback-full-analysis expression-disclosure" onToggle={event => setAnalysisOpen(event.currentTarget.open)}>
+        <summary>查看详细分析 <span>{feedback.dimensions.length} 个维度 · 完整建议</span></summary>
+        {keep.length > 0 && <section className="feedback-strengths"><h3><CheckCircle size={19} />值得保留</h3>{keep.map((text, i) => <p key={i}>{text}</p>)}</section>}
+        {analysisOpen && <><AudioObservations session={session} /><Report feedback={feedback} /></>}
+        <button className="text-button" onClick={() => go("/settings")}>查看 AI 服务设置 <ArrowRight size={15} /></button>
+      </details>
       {!onViewTranscript && (
         <details
           id={`${id}-transcript`}
-          className="feedback-transcript reference-details"
+          className="feedback-transcript reference-details expression-disclosure"
         >
           <summary>原文与录音</summary>
           <p>{session.transcript || "这条练习暂无转写文字。"}</p>
@@ -281,18 +245,10 @@ export function FeedbackReview({
           )}
         </details>
       )}
-      <section id={`${id}-comparison`} className="feedback-comparison-section">
-        {session.previousAttempt ? (
+      {session.previousAttempt && <details id={`${id}-comparison`} className="feedback-comparison-section expression-disclosure">
+        <summary>同题对比 <span>查看两次表达的变化</span></summary>
           <AttemptComparison session={session} />
-        ) : (
-          <div className="feedback-no-comparison">
-            <h3>下一次，看看有什么变化</h3>
-            <p>
-              完成同题再练后，这里会展示两次真实表达。当前还没有上一轮可供对照。
-            </p>
-          </div>
-        )}
-      </section>
+      </details>}
     </div>
   );
 }

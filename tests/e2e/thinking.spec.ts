@@ -83,10 +83,10 @@ test("unsaved notes warn before leaving through application navigation", async (
   await page.goto("/#/thinking?model=inversion");
   await page.getByLabel("我的问题与下一步").fill("尚未保存的思考");
   page.once("dialog", dialog => dialog.dismiss());
-  await page.getByRole("link", { name: "今日练习", exact: true }).click();
+  await page.getByRole("link", { name: "首页", exact: true }).click();
   await expect(page).toHaveURL(/model=inversion/);
   await expect(page.getByLabel("我的问题与下一步")).toHaveValue("尚未保存的思考");
   await page.getByRole("button", { name: "保存笔记", exact: true }).click();
-  await page.getByRole("link", { name: "今日练习", exact: true }).click();
+  await page.getByRole("link", { name: "首页", exact: true }).click();
   await expect(page).toHaveURL(/#\/$/);
 });

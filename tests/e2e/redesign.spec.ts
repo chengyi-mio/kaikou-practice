@@ -4,10 +4,11 @@ import { test, expect, type Page } from "@playwright/test";
 const draft =
   "我建议先确认会议目标，再分享背景，最后明确由谁在什么时候完成下一步。";
 const primaryItems = [
-  { name: "今日练习", path: "/" },
-  { name: "开口训练", path: "/practice/improv" },
+  { name: "首页", path: "/" },
+  { name: "表达训练", path: "/practice/improv" },
+  { name: "模拟面试", path: "/interview" },
   { name: "方法学习", path: "/thinking" },
-  { name: "我的练习", path: "/history" },
+  { name: "练习记录", path: "/history" },
 ];
 
 // These are deliberately local fixtures. Redesign QA must never call a paid AI
@@ -60,7 +61,7 @@ async function readRecords(page: Page) {
 }
 
 for (const width of [390, 1440]) {
-  test(`four primary destinations remain distinct and usable at ${width}px`, async ({
+  test(`five primary destinations remain distinct and usable at ${width}px`, async ({
     page,
   }) => {
     await page.setViewportSize({ width, height: 900 });
@@ -106,6 +107,7 @@ for (const width of [390, 1440]) {
       page.getByRole("heading", { name: "第一条记录，等你开口" }),
     ).toBeVisible();
     expect(await readRecords(page)).toEqual([]);
+    await page.getByRole("button", { name: "表达训练", exact: true }).click();
     await page.getByRole("button", { name: "复述练习", exact: true }).click();
     await expect(page.locator(".history-card")).toHaveCount(0);
     await expect(page.locator(".empty-state")).toBeVisible();
@@ -214,7 +216,7 @@ test("clean Back and Forward retain selected primary destination without duplica
     navigation.getByRole("link", { name: "方法学习", exact: true }),
   ).toHaveAttribute("aria-current", "page");
   await navigation.getByRole("link", { name: "方法学习", exact: true }).click();
-  await navigation.getByRole("link", { name: "我的练习", exact: true }).click();
+  await navigation.getByRole("link", { name: "练习记录", exact: true }).click();
   await expect(page).toHaveURL(/#\/history$/);
   await page.goBack();
   await expect(page).toHaveURL(/#\/thinking$/);

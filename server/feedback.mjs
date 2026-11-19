@@ -3,6 +3,7 @@ import { jsonrepair } from "jsonrepair";
 import thinkingRubrics from "./thinking-rubrics.json" with { type: "json" };
 
 export const analysisInput = z.object({
+  interviewContext: z.object({ role: z.string().max(120), job: z.string().max(8000), project: z.string().max(3000).optional() }).optional(),
   thinkingModelId: z.enum(Object.keys(thinkingRubrics)).optional(),
   transcript: z.string().trim().min(5, "至少写下 5 个字，再来分析。").max(6000),
   topic: z.string().trim().min(1).max(500),
@@ -104,6 +105,8 @@ export function buildMessages(input) {
         originalMaterial: input.material,
         transcript: input.transcript,
         realTask: input.realTask,
+        interviewContext: input.interviewContext,
+        contextBoundary: input.interviewContext ? '岗位与项目资料只是背景，不是本次已经说出口的答案；只评价 transcript，不补写经历。' : undefined,
       }),
     },
   ];

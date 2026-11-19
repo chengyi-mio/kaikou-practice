@@ -2,13 +2,13 @@
 
 一个用于表达训练、思维框架学习与模拟面试的 Windows 桌面应用。选择场景和表达框架，录音或输入文字，再根据 AI 点评进行下一轮练习；也可上传简历和岗位 JD，与 AI 面试官进行 LIVE 语音对练。
 
-**当前源码版本：0.13.3。** 新版包含 LIVE 双方通话录音、自动保存、回放和下载。本次同步源码，尚未发布对应的 GitHub 安装包；已发布安装包仍为 0.10.3，不包含后续新增功能。
+**当前版本为 0.14.5。** 可以用简历、岗位要求和项目经历进行逐题或 LIVE 模拟面试。从六维复盘中选一个短板，带着原题补练，再独立回答一次，对照两次原话。LIVE 通话断线、面试官停在半句话或回答迟迟未转写时，应用会提示并支持保存后继续本轮。
 
 ## 下载使用
 
-**[下载已发布的 Windows 安装包 v0.10.3](https://github.com/chengyi-mio/kaikou-practice/releases/download/v0.10.3/Kaikou-Setup-0.10.3.exe)** · [已发布版本](https://github.com/chengyi-mio/kaikou-practice/releases)
+**[下载 Windows x64 安装包 v0.14.5](https://github.com/chengyi-mio/kaikou-practice/releases/download/v0.14.5/Kaikou-Setup-0.14.5.exe)** · [版本说明与 SHA-256 校验文件](https://github.com/chengyi-mio/kaikou-practice/releases/tag/v0.14.5)
 
-体验 0.13.3 请按下方源码运行方式启动，或在本机执行 `npm run desktop:pack` 构建安装包。
+体验当前源码请按下方源码运行方式启动，或在本机执行 `npm run desktop:pack` 构建安装包。
 
 适用于 Windows x64。安装后从桌面快捷方式启动，无需安装 Node.js。当前安装包未进行代码签名。
 
@@ -20,6 +20,13 @@
 未配置模型时只有明确标注的基础反馈。**安装包支持录音，但不包含本地转写所需的 Python 和语音模型。** 需要转写时请准备下方环境，或配置云端转写；也可直接输入文字练习。
 
 ## 功能
+
+- 面试训练工作台：综合面试、项目深挖、岗位匹配、跳槽／转岗四种重点，支持逐轮与 LIVE。
+- 本机项目素材库：记录背景、本人行动、结果证据及岗位联系，明确选用后才进入本轮资料。
+- 面试复盘转补练：保留原题和岗位背景，按改进重点使用 STAR / PREP；新答案保持空白，防止旧稿误提交。
+- 独立复测与前后原话对照：每次单独保存，可从历史快照重新开始；移除补练任务不会删除已存练习。
+
+调研依据与本轮范围见 [模拟面试训练衔接调研](docs/interview-journey-research-20261114.md)。
 
 - 真实任务入口：围绕工作汇报、解释延期、提出需求和面试回答，填写听众、目标、背景与可修改的检查重点，再进行录音或文字练习。
 - 即兴表达、逻辑表达、复述表达三种训练方式。
@@ -63,7 +70,7 @@
 - AI 服务配置明确显示当前接口是否已有密钥。密钥继续由 Windows 本机加密保存，重启后自动复用；出于安全考虑，输入框不回显原密钥，留空即可测试连接或保存模型设置。
 - 新练习和历史记录的 AI 点评入口保持可见；数据目录和存储分区不变。
 
-这些修复已包含在当前源码中；上方安装包下载链接仍指向已发布的 v0.10.3。
+这些修复已包含在 v0.14.5 源码和安装包中。
 
 ## v0.11.1 本地更新
 
@@ -121,7 +128,7 @@ python -c "from faster_whisper import WhisperModel; WhisperModel('small', device
 需要 Node.js 22.12+ 和 npm。
 
 ```powershell
-git clone --branch feat/live-interview-recording-0.13.3 https://github.com/chengyi-mio/kaikou-practice.git
+git clone --branch v0.14.5 https://github.com/chengyi-mio/kaikou-practice.git
 cd kaikou-practice
 npm ci
 npm run build

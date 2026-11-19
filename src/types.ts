@@ -1,3 +1,5 @@
+import type { InterviewTask } from './interviewTraining';
+
 export type RuleProfile =
   "auto" | "general" | "report" | "interview" | "persuade" | "retell";
 export type Mode = "improv" | "logic" | "retell";
@@ -52,6 +54,9 @@ export type Feedback = {
   metrics: { characters: number; duration: number; fillers: number };
 };
 export type Session = {
+  interviewTaskId?: string;
+  interviewTraining?: InterviewTask;
+  interviewAttempt?: "drill" | "retest";
   followupOf?: string;
   dialogueTurn?: number;
   dialogue?: DialogueTurn[];

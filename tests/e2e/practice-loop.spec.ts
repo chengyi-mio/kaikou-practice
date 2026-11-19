@@ -107,6 +107,7 @@ for (const width of [390, 1280])
     await expect(comparison).toContainText("需完善 → 已做到");
     await expect(comparison).toContainText(first);
     await expect(comparison).toContainText(second);
+    await page.locator('.feedback-comparison-section > summary').click();
     await comparison.scrollIntoViewIfNeeded();
     await page.screenshot({
       path: `.reference-analysis/practice-loop-${width}.png`,
@@ -195,7 +196,7 @@ test('feedback save failure stays unsaved and can save the received result witho
   await page.getByRole('button', {name: '生成 AI 点评', exact: true}).click();
   await expect(page.getByText('本次反馈尚未保存', {exact: true})).toBeVisible();
   await expect(page.getByRole('button', {name: '针对这一点再练'})).toBeDisabled();
-  await expect(page.getByText('Agnes · 多维表达点评')).toBeVisible();
+  await expect(page.getByText('AI 点评 · Agnes', {exact: true})).toBeVisible();
   await page.getByRole('button', {name: '保存本次练习', exact: true}).click();
   await expect(page.locator('.history-card')).toHaveCount(1);
   expect((await records(page))[0].feedback.source).toBe('ai');

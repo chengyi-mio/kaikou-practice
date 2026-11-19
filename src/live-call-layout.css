@@ -1,0 +1,135 @@
+/* The cool call surface belongs only to LIVE; the rest of the app keeps its ink theme. */
+.interview-page .live-panel.interview-panel {
+  --call-ink: #213044;
+  --call-muted: #596b81;
+  --call-line: #dce3ec;
+  padding: 16px;
+  background: #edf1f7;
+  border: 1px solid #dce3ec;
+  border-radius: 18px;
+  color: var(--call-ink);
+  container-type: inline-size;
+}
+.live-panel .live-session-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  min-height: 48px;
+  padding: 10px 16px;
+  border-radius: 13px;
+  background: #ffffffd9;
+}
+.live-panel .live-session-title,
+.live-panel .live-session-status { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.live-panel .live-session-title h2 { margin: 0; font-size: 17px; font-weight: 650; overflow-wrap: anywhere; }
+.live-panel .live-session-tag { padding: 2px 8px; border-radius: 5px; background: #d63742; color: #fff; font-size: 13px; font-weight: 700; letter-spacing: .02em; }
+.live-panel .live-session-status { flex: 0 0 auto; gap: 14px; font-size: 13px; }
+.live-panel .live-recording-status { display: inline-flex; align-items: center; gap: 6px; color: #43556d; }
+.live-panel .live-recording-status i { width: 7px; height: 7px; border-radius: 50%; background: #8493a6; }
+.live-panel .live-recording-status.is-recording i { background: #e13e4b; }
+.live-panel .live-clock { padding-left: 14px; border-left: 1px solid #ced6e2; color: #213044; font-size: 14px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.live-panel .live-clock > span { color: #566981; }
+.interview-page .live-panel .live-preflight { margin: 10px 4px 6px; border-color: var(--call-line); }
+.interview-page .live-panel .live-trial-status { margin: 9px 4px 12px; color: var(--call-muted); font-size: 12px; }
+.live-panel .live-recovery-notice { display: flex; align-items: center; gap: 16px; margin: 12px 0; padding: 16px; border: 1px solid #d7b16c; border-radius: 12px; background: #fff6e6; color: #5e431a; }
+.live-panel .live-recovery-notice > div { flex: 1; min-width: 0; }
+.live-panel .live-recovery-notice strong { color: #634015; }
+.live-panel .live-recovery-notice p { margin: 6px 0; font-size: 14px; line-height: 1.6; color: #5e431a; }
+.live-panel .live-recovery-notice small { display: block; color: #6f542c; line-height: 1.7; }
+.live-panel .live-recovery-notice .button { flex-shrink: 0; margin: 0; color: #fff; background: #6a4d24; border-color: #6a4d24; }
+.live-panel .live-recovery-notice[data-health="stalled"] { border-color: #c87b61; background: #fff0eb; }
+.live-panel .live-manual-recovery { display: block; margin: 0 auto 6px; color: #3c5e88; font-size: 13px; }
+.live-panel .live-call-workspace { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; align-items: stretch; }
+.interview-page .live-panel .live-focus-stage {
+  margin: 0;
+  min-width: 0;
+  min-height: 420px;
+  display: flex;
+  flex-direction: column;
+  background: radial-gradient(ellipse at 48% 38%, #314b62 0%, #283b4f 54%, #223143 100%);
+  border: 1px solid #3a4e62;
+  border-radius: 14px;
+  color: #f8fbff;
+}
+.live-panel .live-focus-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 20px 22px; color: #edf3fb; }
+.live-panel .live-focus-heading h3 { display: flex; align-items: center; gap: 10px; margin: 0; color: inherit; font-size: 16px; font-weight: 500; }
+.live-panel .live-focus-heading > span { display: inline-flex; color: #cfdaea; }
+.live-panel .live-focus-content { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px; min-width: 0; padding: 24px 32px 42px; text-align: center; }
+.live-panel .live-state-wave { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; height: 94px; flex-shrink: 0; }
+.live-panel .live-state-wave span { display: block; width: 4px; max-height: 100%; border-radius: 4px; background: linear-gradient(#d4f3ff, #6eb6e6); opacity: .8; transform: scaleY(.58); }
+.live-panel .is-voice-active .live-state-wave span { animation: live-voice-pulse 1.3s ease-in-out infinite alternate; }
+.live-panel .live-focus-stage[data-state="idle"] .live-state-wave span,
+.live-panel .live-focus-stage[data-state="ended"] .live-state-wave span,
+.live-panel .live-focus-stage[data-state="error"] .live-state-wave span { opacity: .48; transform: scaleY(.25); }
+.interview-page .live-panel .live-current-question { width: 100%; max-height: 230px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #71879c transparent; background: none; border: 0; padding: 0; }
+.interview-page .live-panel .live-current-question p { margin: 0; color: #f8fbff; font-size: clamp(22px, 2.2vw, 30px); line-height: 1.55; font-weight: 550; overflow-wrap: anywhere; }
+.interview-page .live-panel .live-focus-status { display: flex; align-items: center; justify-content: center; gap: 9px; margin: 0; color: #cfdaea; font-size: 14px; line-height: 1.6; }
+.interview-page .live-panel .live-transcript-disclosure { margin: 0; padding: 20px; min-width: 0; border: 1px solid #e2e7ef; border-radius: 14px; background: #fff; }
+.interview-page .live-panel .live-transcript-disclosure > summary { display: flex; align-items: center; gap: 12px; list-style: none; margin: 0 0 10px; color: #213044; font-size: 19px; }
+.interview-page .live-panel .live-transcript-disclosure > summary::-webkit-details-marker { display: none; }
+.interview-page .live-panel .live-transcript-disclosure > summary::after { content: '⌄'; margin-left: auto; color: #6a7c91; font-size: 17px; }
+.interview-page .live-panel .live-transcript-disclosure:not([open]) > summary::after { content: '›'; }
+.interview-page .live-panel .live-transcript-disclosure > summary .live-transcript-mode { margin: 0; padding: 3px 8px; border-radius: 6px; color: #2d568c; background: #eaf2ff; font-size: 11px; font-weight: 600; }
+.interview-page .live-panel .live-transcript-heading { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 8px; }
+.interview-page .live-panel .live-transcript-heading p { margin: 0; font-size: 12px; line-height: 1.6; color: var(--call-muted); }
+.interview-page .live-panel .live-transcript-heading .text-button { min-height: 28px; padding: 2px 0; color: #3c5e88; font-size: 12px; flex-shrink: 0; }
+.interview-page .live-panel .live-transcript { height: 330px; max-height: none; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: #c4cedb transparent; padding: 0 6px 0 0; background: none; border: 0; border-radius: 0; }
+.interview-page .live-panel .live-empty { height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; margin: 0; color: var(--call-muted); font-size: 14px; text-align: center; line-height: 1.9; }
+.interview-page .live-panel .live-message { max-width: none; margin: 0; padding: 15px 0 20px; border: 0; border-bottom: 1px solid #e2e7ef; border-radius: 0; background: none; color: #213044; }
+.interview-page .live-panel .live-message:last-child { border-bottom: 0; }
+.interview-page .live-panel .live-message strong { display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap; color: #2e5688; font-size: 14px; }
+.interview-page .live-panel .live-message time { color: #63758a; font-size: 12px; font-weight: 400; font-variant-numeric: tabular-nums; }
+.interview-page .live-panel .live-message small { color: #6c5e42; font-size: 11px; }
+.interview-page .live-panel .live-message p { margin: 7px 0 0; color: #253446; font-size: 15px; line-height: 1.8; white-space: pre-wrap; }
+.interview-page .live-panel .live-message textarea { min-height: 130px; margin: 9px 0 4px; background: #f9fbfe; border-color: #c7d3e2; color: #253446; font-size: 14px; line-height: 1.8; }
+.interview-page .live-panel .live-message .text-button { min-height: 30px; padding: 4px 9px 4px 0; color: #355f93; font-size: 12px; }
+.interview-page .live-panel .live-transcript-disclosure > p { margin: 12px 0 0; color: var(--call-muted); font-size: 11px; line-height: 1.7; }
+.interview-page .live-panel .live-consent { margin: 12px 4px; color: #53677e; font-size: 12px; }
+.interview-page .live-panel .live-consent-confirmed { margin: 9px 0; color: #596b81; font-size: 12px; }
+.interview-page .live-panel .live-call-controls { width: fit-content; max-width: 100%; margin: 16px auto 10px; padding: 12px; gap: 8px; justify-content: center; border: 1px solid #fff; border-radius: 20px; background: #ffffffc9; box-shadow: 0 8px 30px #23344e08; }
+.interview-page .live-panel .live-call-controls .button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; min-width: 0; margin: 0; padding: 10px 16px; border-radius: 10px; font-size: 14px; line-height: 1.3; }
+.interview-page .live-panel .live-call-controls .button.secondary { background: #eaf0f8; border-color: transparent; color: #26394e; }
+.interview-page .live-panel .live-call-controls .live-mic-control,
+.interview-page .live-panel .live-call-controls .live-interrupt-control { background: transparent; }
+.interview-page .live-panel .live-call-controls .live-mic-control[aria-pressed="true"] { color: #a72938; background: #ffeff0; }
+.interview-page .live-panel .live-call-controls .button.secondary[data-action="end-call"] { background: #da3342; border-color: #da3342; color: #fff; padding-inline: 22px; }
+.interview-page .live-panel .live-call-controls .button.secondary[data-action="end-call"]:hover { background: #bb2432; }
+.interview-page .live-panel .live-output-control { position: relative; color: #26394e; }
+.interview-page .live-panel .live-output-control > summary { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 10px 14px; border-radius: 10px; cursor: pointer; font-size: 14px; font-weight: 600; list-style: none; }
+.interview-page .live-panel .live-output-control > summary::-webkit-details-marker { display: none; }
+.interview-page .live-panel .live-output-control > summary:hover { background: #eaf0f8; }
+.interview-page .live-panel .live-volume-popover { position: absolute; bottom: calc(100% + 10px); left: 0; z-index: 15; width: 250px; padding: 16px; border: 1px solid #d4dfec; border-radius: 12px; background: #fff; box-shadow: 0 8px 28px #22374e1c; }
+.interview-page .live-panel .live-volume-popover label { display: flex; flex-direction: row; align-items: center; flex-wrap: wrap; gap: 8px; margin: 0; color: #26394e; font-size: 13px; }
+.interview-page .live-panel .live-volume-popover output { margin-left: auto; font-variant-numeric: tabular-nums; }
+.interview-page .live-panel .live-volume-popover input[type="range"] { width: 100%; min-height: 32px; padding: 0; border: 0; accent-color: #385e8c; }
+.interview-page .live-panel .live-volume-popover p { margin: 8px 0 0; color: #61738a; font-size: 11px; line-height: 1.6; }
+.interview-page .live-panel .interview-review-status { color: #596b81; text-align: center; font-size: 12px; }
+.interview-page .live-panel .live-round-controls { margin-bottom: 0; }
+.interview-page .live-panel :is(.live-output-control > summary, .live-transcript-disclosure > summary):focus-visible { outline: 3px solid #679acb; outline-offset: 3px; }
+@container (min-width: 760px) {
+  .live-panel .live-call-workspace { grid-template-columns: minmax(0, 1.12fr) minmax(0, 1fr); }
+}
+@media (max-width: 700px) {
+  .live-panel .live-recovery-notice { align-items: stretch; flex-direction: column; gap: 12px; }
+  .interview-page .live-panel.interview-panel { padding: 10px; }
+  .live-panel .live-session-bar { align-items: flex-start; flex-direction: column; gap: 8px; padding: 12px; }
+  .live-panel .live-session-title h2 { font-size: 16px; }
+  .live-panel .live-session-status { width: 100%; justify-content: space-between; }
+  .interview-page .live-panel .live-focus-stage { min-height: 330px; }
+  .live-panel .live-focus-heading { padding: 16px; }
+  .live-panel .live-focus-content { gap: 20px; padding: 12px 20px 28px; }
+  .live-panel .live-state-wave { gap: 5px; height: 70px; }
+  .live-panel .live-state-wave span { width: 3px; }
+  .interview-page .live-panel .live-transcript-disclosure { padding: 16px; }
+  .interview-page .live-panel .live-transcript { height: 300px; }
+  .interview-page .live-panel .live-call-controls { width: 100%; border-radius: 14px; gap: 8px; padding: 8px; }
+  .interview-page .live-panel .live-call-controls .button,
+  .interview-page .live-panel .live-output-control { flex: 1 1 calc(50% - 8px); min-width: 0; }
+  .interview-page .live-panel .live-output-control > summary { justify-content: center; }
+  .interview-page .live-panel .live-volume-popover { left: auto; right: 0; width: min(250px, 70vw); }
+}
+@keyframes live-voice-pulse { from { transform: scaleY(.45); opacity: .55; } to { transform: scaleY(1); opacity: .95; } }
+@media (prefers-reduced-motion: reduce) {
+  .live-panel .is-voice-active .live-state-wave span { animation: none; transform: scaleY(.65); }
+}

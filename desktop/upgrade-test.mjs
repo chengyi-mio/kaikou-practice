@@ -27,6 +27,14 @@ try {
     const db=await new Promise((resolve,reject)=>{const r=indexedDB.open('kaikou-practice',1);r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});
     await new Promise((resolve,reject)=>{const tx=db.transaction('sessions','readwrite');const store=tx.objectStore('sessions');const request=store.getAll();request.onsuccess=()=>{store.put({...request.result[0],audio:new Blob(['synthetic-upgrade-audio'],{type:'audio/webm'})});};tx.oncomplete=resolve;tx.onabort=tx.onerror=reject;});db.close();
   });
+  const interviewBefore = await page.evaluate(() => {
+    const source={role:'合成升级测试岗位',resume:'这是一份合成测试简历，包含项目管理与需求分析经验。',job:'这是合成岗位描述，要求需求分析、团队协调和项目落地。'};
+    const draft={...source,question:'这是尚未提交的旧面试题？',answer:'这是尚未提交的旧回答，升级后必须保留。',turns:[],report:null};
+    const live={id:'synthetic-upgrade-live',source,messages:[{id:'q',role:'assistant',text:'介绍一个合成测试项目？',final:true},{id:'a',role:'user',text:'这是一段升级前的合成 LIVE 回答。',final:true}],elapsed:30,tokens:90,usage:[],minutes:10,report:null};
+    localStorage.setItem('kaikou.interview.draft.v1',JSON.stringify(draft));
+    localStorage.setItem('kaikou.live-interview.draft.v1',JSON.stringify(live));
+    return {draft,live};
+  });
   const before = fs.readFileSync(path.join(userData,'ai-service.json'));
   await app.close(); app = undefined;
   app = await launch(newExe);
@@ -43,6 +51,11 @@ try {
     const record=await new Promise(resolve=>{const r=db.transaction('sessions').objectStore('sessions').getAll();r.onsuccess=()=>resolve(r.result[0]);});db.close();return record.audio.text();
   });
   assert.equal(preservedAudio,'synthetic-upgrade-audio');
+  await page.goto('http://127.0.0.1:47932/#/interview');
+  await expect(page.getByLabel(/我的回答/)).toHaveValue(interviewBefore.draft.answer);
+  await expect(page.getByRole('button',{name:'生成 AI 面试复盘',exact:true})).toBeVisible();
+  const interviewAfter=await page.evaluate(()=>({draft:JSON.parse(localStorage.getItem('kaikou.interview.draft.v1')),live:JSON.parse(localStorage.getItem('kaikou.live-interview.draft.v1'))}));
+  assert.deepEqual(interviewAfter,interviewBefore,'Upgrade must retain unsent interview answers and LIVE transcript');
   await page.goto('http://127.0.0.1:47932/#/history');
   await expect(page.locator('.history-card')).toHaveCount(1);
   await page.locator('.history-card').click();
@@ -51,5 +64,5 @@ try {
   await page.goto('http://127.0.0.1:47932/#/practice/improv');
   await page.getByRole('button',{name:'也可以用文字练习'}).click();
   await expect(page.getByRole('button',{name:'生成 AI 点评',exact:true})).toBeVisible();
-  console.log('PASS: cross-version upgrade preserves encrypted configuration, practice history and audio bytes, and AI entry in both practice and history. No model request sent.');
+  console.log('PASS: cross-version upgrade preserves encrypted configuration, practice history/audio, unsent interview drafts and LIVE transcript, and AI entry in both practice and history. No model request sent.');
 } finally { if(app) await app.close(); }

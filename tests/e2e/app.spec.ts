@@ -8,12 +8,13 @@ test("mobile home, categories and framework selection are usable", async ({
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto("/");
   await expect(
-    page.getByRole("heading", { name: "今天，先把一句话说清楚" }),
+    page.getByRole("heading", { name: "今天，你想练什么？" }),
   ).toBeVisible();
   await page.screenshot({
     path: ".reference-analysis/home-mobile.png",
     fullPage: true,
   });
+  await page.getByRole("button", { name: "开始表达训练" }).click();
   await page.getByRole("button", { name: /场景表达/ }).click();
   await page.getByRole("button", { name: /结构库/ }).click();
   await page.getByRole("button", { name: "PREP 模型", exact: true }).click();
@@ -126,6 +127,7 @@ test("retelling reference, random words and empty history filters", async ({
   await page.getByLabel("词语分类").selectOption("职场");
   await expect(page.locator(".word-card>span")).toHaveCount(3);
   await page.goto("/#/history");
+  await page.getByRole("button", { name: "表达训练", exact: true }).click();
   await page.getByRole("button", { name: "复述练习", exact: true }).click();
   await expect(page.locator(".empty-state")).toBeVisible();
 });

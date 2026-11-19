@@ -1,0 +1,39 @@
+.unified-history .page-intro { margin-bottom: 24px; }
+.unified-history .record-category { margin-bottom: 16px; }
+.unified-history .history-workspace:not(:has(.history-preview)) { grid-template-columns: minmax(0, 1fr); }
+.unified-history .history-card { width: 100%; }
+.unified-history .interview-history-card .history-card > p { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.record-disclosure { margin: 16px 0; border: 1px solid var(--line, #d9e2d5); border-radius: 12px; background: var(--surface, #fff); overflow: clip; }
+.record-disclosure > summary { padding: 17px 20px; color: var(--ink, #203e36); font-weight: 600; cursor: pointer; }
+.record-disclosure[open] > summary { border-bottom: 1px solid var(--line, #d9e2d5); }
+.record-disclosure > :not(summary) { margin: 16px 20px; }
+.record-disclosure .interview-training-history { padding: 0; border: 0; border-radius: 0; box-shadow: none; }
+.interview-record-detail { max-width: 1080px; margin-inline: auto; }
+.record-detail-title { margin: 20px 0 12px; }
+.record-detail-title h1 { font-size: clamp(24px, 2.5vw, 32px); line-height: 1.4; }
+.record-detail-title p, .record-context-note { color: var(--muted, #5d7066); }
+.record-review-actions { margin: 20px 0; }
+.record-review-actions .ai-recovery { margin: 0; padding: 0; border: 0; background: transparent; }
+.record-review-actions .ai-recovery > .button.primary { background: var(--surface, #fff); color: var(--accent, #305f51); border: 1px solid var(--accent, #305f51); }
+.record-review-actions [role="alert"] { color: #8b351c; }
+.saved-interview-review { margin-top: 24px; }
+.saved-interview-review > p { max-width: 75ch; line-height: 1.8; }
+.saved-review-dimensions section + section { border-top: 1px solid var(--line, #d9e2d5); padding-top: 20px; margin-top: 20px; }
+.saved-review-dimensions h3 { display: flex; justify-content: space-between; gap: 16px; font-size: 17px; }
+.saved-review-dimensions h3 span { font-size: 14px; font-weight: 400; }
+.saved-review-dimensions blockquote { margin: 12px 0; padding: 12px 16px; background: #eff3ec; border: 0; color: #284b40; }
+.saved-question { padding-block: 4px 12px; }
+.saved-question + .saved-question { border-top: 1px solid var(--line, #d9e2d5); padding-top: 20px; }
+.saved-question h3 { font-size: 17px; }
+.saved-question p, .record-source-text { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.8; max-width: 75ch; }
+.saved-interview-audio + .saved-interview-audio { padding-top: 20px; margin-top: 20px; border-top: 1px solid var(--line, #d9e2d5); }
+.saved-interview-audio p { margin: 6px 0 12px; color: var(--muted, #5d7066); font-size: 14px; }
+.record-inline-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.saved-interview-audio audio { width: 100%; margin-top: 12px; }
+.record-disclosure summary:focus-visible { outline: 3px solid #305f51; outline-offset: -4px; border-radius: 10px; }
+@media (max-width: 640px) {
+  .record-disclosure > summary { padding: 15px 16px; }
+  .record-disclosure > :not(summary) { margin: 16px; }
+  .record-inline-actions .button, .record-inline-actions .text-button { min-height: 44px; }
+  .record-detail-title h1 { font-size: 24px; }
+}

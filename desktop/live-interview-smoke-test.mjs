@@ -7,13 +7,17 @@ const exe = process.argv[2];
 assert.ok(exe && path.isAbsolute(exe) && fs.existsSync(exe), "Provide an absolute packaged executable path");
 const profile = path.join(process.cwd(), ".reference-analysis", `live-desktop-${Date.now()}`);
 fs.mkdirSync(profile, { recursive: true });
+const screenshots = process.argv[3] ? path.resolve(process.argv[3]) : profile;
+fs.mkdirSync(screenshots, { recursive: true });
 const env = { ...process.env, KAIKOU_TEST_USER_DATA: profile, KAIKOU_TEST_PORT: "47935", KAIKOU_TEST_HIDE_WINDOW: "1" };
 delete env.ELECTRON_RUN_AS_NODE;
 let app;
 const launch = () => _electron.launch({ executablePath: exe, env, args: ["--use-fake-device-for-media-stream", "--use-fake-ui-for-media-stream"], timeout: 60000 });
 async function capture(file) {
   const png = await app.evaluate(async ({ BrowserWindow }) => {
-    const shot = await BrowserWindow.getAllWindows()[0].capturePage(undefined, { stayHidden: true, stayAwake: true });
+    const window = BrowserWindow.getAllWindows()[0];
+    await window.webContents.executeJavaScript('new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))');
+    const shot = await window.capturePage(undefined, { stayHidden: true, stayAwake: true });
     return shot.toPNG().toString("base64");
   });
   assert.ok(png.length > 1000, "Desktop capture must contain pixels");
@@ -23,7 +27,13 @@ try {
   app = await launch();
   let page = await app.firstWindow();
   await page.waitForLoadState("domcontentloaded");
+  await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].setSize(1440, 1000));
   await page.setViewportSize({ width: 1420, height: 1000 });
+  await expect(page.getByRole('button', { name: '收起侧栏', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: '新练习', exact: true })).toHaveCount(0);
+  await capture(path.join(screenshots, 'desktop-home.png'));
+  await page.getByRole('button', { name: '收起侧栏', exact: true }).click();
+  await capture(path.join(screenshots, 'desktop-home-collapsed.png'));
   const original = await page.evaluate(() => window.desktopApp.saveServiceSettings({ baseUrl: "https://example.com/v1", model: "test-review", apiKey: "synthetic-review-secret" }));
   assert.equal(original.success, true);
   const reviewFile = path.join(profile, "ai-service.json");
@@ -45,6 +55,10 @@ try {
   await app.close(); app = undefined;
   app = await launch(); page = await app.firstWindow();
   await page.waitForLoadState("domcontentloaded");
+  await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].setSize(1440, 1000));
+  await expect(page.getByRole('button', { name: '展开侧栏', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: '展开侧栏', exact: true }).click();
+  await expect(page.locator('.agent-frame')).toHaveAttribute('data-sidebar-collapsed', 'false');
   const restored = await page.evaluate(async () => ({ live: await window.desktopApp.getRealtimeSettings(), review: await window.desktopApp.getServiceSettings() }));
   assert.equal(restored.live.value.hasKey, true); assert.equal(restored.review.value.hasKey, true);
   assert.equal(restored.live.value.workspace, "synthetic-workspace");
@@ -84,7 +98,21 @@ try {
   await page.locator(".interview-columns textarea").nth(1).fill("虚构测试岗位：需要产品规划、项目交付和团队协调沟通能力。");
   await page.locator(".live-panel > .live-consent input").check();
   await page.getByRole("button", { name: "开始 LIVE 面试", exact: true }).click();
+  await expect(page.locator('.live-transcript-disclosure')).toHaveAttribute('open', '');
   await expect(page.getByText("隔离测试回答：我负责需求分析和项目协调。", { exact: true })).toBeVisible({ timeout: 20000 });
+  await page.locator('.live-call-room').evaluate(element => { window.__originalCallRoom = element; });
+  await page.getByRole('button', { name: '收起侧栏', exact: true }).click();
+  assert.equal(await page.locator('.live-call-room').evaluate(element => window.__originalCallRoom === element), true);
+  assert.equal(await page.evaluate(() => window.__testProvider.connectionState), 'connected');
+  page.once('dialog', dialog => dialog.dismiss());
+  await page.getByRole('navigation', { name: '桌面导航', exact: true }).getByRole('link', { name: '首页', exact: true }).click();
+  await expect(page.locator('.live-recording-disclosure > summary')).toContainText('正在录制双方声音');
+  await page.getByRole('button', { name: '展开侧栏', exact: true }).click();
+  await expect(page.locator('.agent-frame')).toHaveAttribute('data-sidebar-collapsed', 'false');
+  await expect(page.getByRole('button', { name: '结束 / 暂停通话', exact: true })).toHaveCSS('background-color', 'rgb(218, 51, 66)');
+  await page.mouse.move(1200, 10);
+  await page.locator('.live-session-bar').evaluate(element => window.scrollTo(0, Math.max(0, window.scrollY + element.getBoundingClientRect().top - 16)));
+  await capture(path.join(screenshots, 'desktop-live-active.png'));
   await page.waitForTimeout(1300);
   await page.getByRole("button", { name: "结束 / 暂停通话", exact: true }).click();
   await expect(page.locator('.live-recording-row')).toHaveCount(1);
@@ -103,5 +131,5 @@ try {
   await page.locator('.live-recording-row audio').evaluate(a=>a.pause());
   await page.locator('.live-recordings').scrollIntoViewIfNeeded();await capture(path.join(profile,'live-recording-after-restart.png'));
   assert.deepEqual(fs.readFileSync(reviewFile),reviewBytes);
-  console.log(`PASS: packaged WebRTC, captions, review entry, LIVE recording persists across process restart and plays with finite duration, OS encrypted LIVE key restart/blank reuse, original review key unchanged. Test provider only, no real AI call. Screenshots: ${profile}`);
+  console.log(`PASS: packaged Agent sidebar restart preference, collapse and cancelled navigation preserve active call, red end-call control, WebRTC, captions, review entry, LIVE recording persists across process restart and plays with finite duration, OS encrypted LIVE key restart/blank reuse, original review key unchanged. Test provider only, no real AI call. Profile: ${profile}. Layout screenshots: ${screenshots}`);
 } finally { if (app) await app.close(); }

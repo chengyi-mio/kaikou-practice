@@ -157,6 +157,8 @@ export function buildAgnesMessages(input) {
         rubric: standard.dimensions,
         scene: standard.name,
         realTask: input.realTask,
+        interviewContext: input.interviewContext,
+        contextBoundary: input.interviewContext ? '岗位与项目资料仅作背景。证据只能引用 transcript 对应的 evidenceSegments，不得把项目素材当成已经说出的回答。' : undefined,
       }),
     },
   ];

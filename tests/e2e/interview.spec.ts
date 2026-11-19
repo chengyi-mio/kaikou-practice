@@ -29,7 +29,7 @@ test("面试草稿在 AI 失败后保留，恢复后可追问并保存复盘", a
   await page.getByRole("button", { name: "保存本题回答" }).click();
   await page.getByRole("button", { name: "生成 AI 面试复盘" }).click();
   await expect(page.getByText("表达有重点。")).toBeVisible();
-  await expect(page.getByText("本机面试复盘")).toBeVisible();
+  await expect(page.locator('.interview-management > summary')).toContainText('1 条本机面试复盘');
   await page.reload();
   await expect(page.getByText("表达有重点。")).toBeVisible();
 });

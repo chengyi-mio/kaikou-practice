@@ -58,11 +58,13 @@ test("pre-usage-report LIVE history remains readable without losing its review",
   await page.evaluate(({resume,job,report}) => localStorage.setItem('kaikou.live-interview.history.v1',JSON.stringify([{time:'2026-11-01T00:00:00Z',draft:{id:'old-live-report',source:{role:'旧版面试',resume,job},messages:[{id:'q',role:'assistant',text:'你负责什么？',final:true},{id:'a',role:'user',text:'我负责需求分析和产品协调。',final:true}],tokens:500,elapsed:60,minutes:10,report}}])),{resume,job,report});
   await page.reload();
   await page.getByRole('button',{name:'LIVE 实时面试',exact:true}).click();
-  page.once('dialog',d=>d.accept());
-  await page.getByRole('button',{name:/旧版面试/}).click();
+  const currentDraft = await page.evaluate(() => localStorage.getItem('kaikou.live-interview.draft.v1'));
+  await page.getByRole('button',{name:/查看已保存的 LIVE 复盘/}).click();
+  await page.getByRole('heading',{name:'旧版面试',exact:true}).click();
   await expect(page.getByText(report.summary,{exact:true})).toBeVisible();
   await page.locator('.live-usage summary').click();
   await expect(page.locator('.live-usage table')).toContainText('未完整回报');
+  expect(await page.evaluate(() => localStorage.getItem('kaikou.live-interview.draft.v1'))).toBe(currentDraft);
 });
 test("native WebRTC: captions, interruption, failure recovery, persisted report and no old answers", async ({
   page,
@@ -113,7 +115,7 @@ test("native WebRTC: captions, interruption, failure recovery, persisted report 
     .getByRole("button", { name: "开始 LIVE 面试", exact: true })
     .click();
   await expect(
-    page.getByText("请介绍你负责的一次产品项目？", { exact: true }),
+    page.locator('.live-current-question').filter({ hasText: '请介绍你负责的一次产品项目？' }),
   ).toBeVisible();
   expect(
     await page.evaluate(() => (window as any).__liveRequests[0].history),
@@ -163,6 +165,7 @@ test("native WebRTC: captions, interruption, failure recovery, persisted report 
       },
     ]),
   );
+  await expect(page.locator('.live-transcript-disclosure')).toHaveAttribute('open', '');
   await expect(
     page.getByText("我负责需求分析和优先级梳理，并与研发一起确认排期。", {
       exact: true,
@@ -218,7 +221,7 @@ test("network loss retains subtitles, reconnect restores context and time limit 
     .getByRole("button", { name: "开始 LIVE 面试", exact: true })
     .click();
   await expect(
-    page.getByText("请介绍你负责的一次产品项目？", { exact: true }),
+    page.locator('.live-current-question').filter({ hasText: '请介绍你负责的一次产品项目？' }),
   ).toBeVisible();
   await page.evaluate(() =>
     (window as any).__emit([
@@ -230,6 +233,7 @@ test("network loss retains subtitles, reconnect restores context and time limit 
       },
     ]),
   );
+  await expect(page.locator('.live-transcript-disclosure')).toHaveAttribute('open', '');
   await expect(
     page.getByText("我负责需求分析并整理项目关键风险。", { exact: true }),
   ).toBeVisible();
@@ -335,9 +339,10 @@ test('LIVE 通话场景可见，通话中复盘说明先结束，退出后保持
   await page.locator('.live-call-room').evaluate(e=>e.scrollIntoView({block:'start'}));
   await page.screenshot({path:'.impeccable/review/compact-desktop.png'});
   await page.getByRole('button',{name:'生成 AI 面试复盘',exact:true}).click();
-  await expect(page.locator(".live-panel > .interview-error")).toContainText('先点击“结束 / 暂停通话”');
+  await expect(page.locator(".live-panel > .interview-error")).toContainText('先点击“结束面试”');
   await page.evaluate(()=>(window as any).__emit([{type:'input_audio_buffer.speech_started',item_id:'punctuation-answer'},{type:'conversation.item.input_audio_transcription.completed',item_id:'punctuation-answer',transcript:'我负责需求分析然后核对了交付范围'}]));
   await page.getByRole('button',{name:'结束 / 暂停通话',exact:true}).click();
+  await expect(page.locator('.live-transcript-disclosure')).toHaveAttribute('open', '');
   await expect(page.getByLabel(/第 \d+ 条回答文字/)).toHaveValue('我负责需求分析，然后核对了交付范围。');
   await page.getByRole('button',{name:'撤销这段标点',exact:true}).click();
   await expect(page.getByLabel(/第 \d+ 条回答文字/)).toHaveValue('我负责需求分析然后核对了交付范围');
@@ -352,22 +357,22 @@ test("a short pause never submits an answer; resumed speech and ending cancel pe
   await page.locator('.live-preflight > summary').click();
   await page.getByLabel('思考停顿').selectOption('3000');
   await page.getByRole('button', { name: '开始 LIVE 面试', exact: true }).click();
-  await expect(page.getByText('请介绍你负责的一次产品项目？', { exact: true })).toBeVisible();
+  await expect(page.locator('.live-current-question')).toContainText('请介绍你负责的一次产品项目？');
   await page.evaluate(() => (window as any).__emit([{type:'response.done',response:{id:'opening',status:'completed'}}]));
-  await expect(page.locator('.live-speaking-status')).toContainText('正在认真听');
+  await expect(page.locator('.live-focus-status')).toContainText('正在聆听你的回答');
   await page.clock.install();
   await page.clock.pauseAt(new Date());
   const creates = () => page.evaluate(() => (window as any).__providerEvents.filter((e: any) => e.type === 'response.create').length);
   await page.evaluate(() => (window as any).__emit([{ type: 'input_audio_buffer.speech_started' }, { type: 'input_audio_buffer.speech_stopped' }]));
-  await expect(page.locator('.live-speaking-status')).toContainText('准备追问');
+  await expect(page.locator('.live-focus-status')).toContainText('准备追问');
   await page.clock.runFor(600);
   expect(await creates()).toBe(1);
   await page.evaluate(() => (window as any).__emit([{ type: 'input_audio_buffer.speech_started' }]));
-  await expect(page.locator('.live-speaking-status')).toContainText('正在认真听');
+  await expect(page.locator('.live-focus-status')).toContainText('正在聆听你的回答');
   await page.clock.runFor(3100);
   expect(await creates()).toBe(1);
   await page.evaluate(() => (window as any).__emit([{ type: 'input_audio_buffer.speech_stopped' }]));
-  await expect(page.locator('.live-speaking-status')).toContainText('准备追问');
+  await expect(page.locator('.live-focus-status')).toContainText('准备追问');
   await page.clock.runFor(3100);
   await expect.poll(creates).toBe(2);
   await page.evaluate(() => (window as any).__emit([{ type: 'input_audio_buffer.speech_started' }, { type: 'input_audio_buffer.speech_stopped' }]));
